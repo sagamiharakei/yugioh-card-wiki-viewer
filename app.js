@@ -72,6 +72,55 @@ const encodeYgoPageName = (value) => {
   }
 };
 
+const decodeEucJpComponent = (value) => {
+  const encoding = globalThis.Encoding;
+  if (!encoding?.convert || !encoding?.codeToString) {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  }
+
+  try {
+    const bytes = [];
+    for (let index = 0; index < value.length; index += 1) {
+      if (value[index] === "%" && index + 2 < value.length) {
+        bytes.push(Number.parseInt(value.slice(index + 1, index + 3), 16));
+        index += 2;
+      } else {
+        bytes.push(value.charCodeAt(index));
+      }
+    }
+    const unicode = encoding.convert(bytes, { to: "UNICODE", from: "EUCJP" });
+    return encoding.codeToString(unicode);
+  } catch {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  }
+};
+
+const pageNameFromWikiUrl = (url) => {
+  try {
+    const parsed = new URL(url, WIKI_BASE);
+    const rawQuery = parsed.search.slice(1);
+    if (!rawQuery) return "";
+
+    const pageParam = rawQuery
+      .split("&")
+      .map((part) => part.split("="))
+      .find(([key]) => key === "page" || key === "refer");
+    if (pageParam?.[1]) return decodeEucJpComponent(pageParam[1]);
+    if (!rawQuery.includes("=")) return decodeEucJpComponent(rawQuery);
+    return "";
+  } catch {
+    return "";
+  }
+};
+
 const normalizeUrl = (value) => {
   const trimmed = value.trim();
   if (!trimmed) return WIKI_BASE;
@@ -84,7 +133,7 @@ const titleFromUrl = (url, fallback) => {
   if (cleanFallback && !/^https?:\/\//i.test(cleanFallback)) return cleanFallback;
   try {
     const parsed = new URL(url);
-    return decodeURIComponent(parsed.search.slice(1) || parsed.pathname.split("/").filter(Boolean).pop() || parsed.hostname);
+    return pageNameFromWikiUrl(url) || decodeURIComponent(parsed.pathname.split("/").filter(Boolean).pop() || parsed.hostname);
   } catch {
     return cleanFallback || "遊戯王カードWiki";
   }
@@ -153,17 +202,81 @@ const renderText = (text) => {
   return html.join("");
 };
 
-const htmlToReadableText = (html) => {
+const isWikiUrl = (url) => {
+  try {
+    const parsed = new URL(url, WIKI_BASE);
+    return ["yugioh-wiki.net", "www.yugioh-wiki.net"].includes(parsed.hostname);
+  } catch {
+    return false;
+  }
+};
+
+const htmlToReadableHtml = (html) => {
   const doc = new DOMParser().parseFromString(html, "text/html");
-  doc.querySelectorAll("script, style, noscript, iframe, svg, nav, footer").forEach((node) => node.remove());
+  doc.querySelectorAll([
+    "script",
+    "style",
+    "noscript",
+    "iframe",
+    "svg",
+    "form",
+    "input",
+    "button",
+    "select",
+    "textarea",
+    "#header",
+    "#navigator",
+    "#menubar",
+    ".menubar",
+    ".jumpmenu",
+    "ins.adsbygoogle"
+  ].join(",")).forEach((node) => node.remove());
+
   const title = doc.querySelector("h1, title")?.textContent?.trim();
-  const main = doc.querySelector("#body, #content, main, article, .contents, body");
-  const body = (main?.textContent || doc.body?.textContent || html)
+  const main = doc.querySelector("#body, #content, main, article, .contents") || doc.body;
+
+  main.querySelectorAll("*").forEach((element) => {
+    [...element.attributes].forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      if (name.startsWith("on") || name === "style") element.removeAttribute(attribute.name);
+    });
+  });
+
+  main.querySelectorAll("a[href]").forEach((link) => {
+    const rawHref = link.getAttribute("href");
+    if (!rawHref || rawHref.startsWith("#")) return;
+
+    let resolved;
+    try {
+      resolved = new URL(rawHref, WIKI_BASE);
+    } catch {
+      link.removeAttribute("href");
+      return;
+    }
+
+    if (!["http:", "https:"].includes(resolved.protocol)) {
+      link.removeAttribute("href");
+      return;
+    }
+
+    const resolvedUrl = resolved.toString();
+    if (isWikiUrl(resolvedUrl)) {
+      link.href = "#home";
+      link.dataset.wikiUrl = resolvedUrl;
+      link.classList.add("wiki-link");
+      link.removeAttribute("target");
+      link.removeAttribute("rel");
+      return;
+    }
+    link.target = "_blank";
+    link.rel = "noopener";
+  });
+
+  const body = main.innerHTML
     .replace(/\u00a0/g, " ")
-    .replace(/[ \t]{2,}/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
+    .replace(/(<br\s*\/?>\s*){3,}/gi, "<br><br>")
     .trim();
-  return title ? `# ${title}\n\n${body}` : body;
+  return title ? `<h1>${escapeHtml(title.replace(/\s+-遊戯王カードWiki$/, ""))}</h1>${body}` : body;
 };
 
 const fetchText = async (url) => {
@@ -178,16 +291,16 @@ const fetchViaArticleApi = async (url) => {
   const response = await fetch(endpoint, { cache: "no-store" });
   if (!response.ok) throw new Error(`取得APIに接続できません (${response.status})`);
   const data = await response.json();
-  if (data.text) return data.text;
-  if (data.html) return htmlToReadableText(data.html);
+  if (data.text) return renderText(data.text);
+  if (data.html) return htmlToReadableHtml(data.html);
   throw new Error("取得APIの応答が空でした");
 };
 
 const fetchArticle = async (url) => {
   const attempts = [
     () => fetchViaArticleApi(url),
-    () => fetchText(`${READER_BASE}${url}`),
-    () => fetchText(`${ALL_ORIGINS_BASE}${encodeURIComponent(url)}`).then(htmlToReadableText)
+    () => fetchText(`${READER_BASE}${url}`).then(renderText),
+    () => fetchText(`${ALL_ORIGINS_BASE}${encodeURIComponent(url)}`).then(htmlToReadableHtml)
   ];
 
   let lastError = null;
@@ -302,7 +415,7 @@ const showArticle = ({ title, url, content, fromSaved = false }) => {
   articleTitle.textContent = title;
   openOriginal.href = url;
   article.classList.remove("empty");
-  article.innerHTML = renderText(content);
+  article.innerHTML = /<\/?[a-z][\s\S]*>/i.test(content) ? content : renderText(content);
   renderAffiliateLinks(title);
   syncActionButtons();
 
@@ -427,6 +540,17 @@ document.querySelectorAll("[data-page]").forEach((button) => {
     queryInput.value = button.dataset.page;
     openArticle(button.dataset.page);
   });
+});
+
+article.addEventListener("click", (event) => {
+  const link = event.target.closest("a[data-wiki-url]");
+  if (!link) return;
+  event.preventDefault();
+  const targetUrl = link.dataset.wikiUrl;
+  if (!targetUrl) return;
+  queryInput.value = pageNameFromWikiUrl(targetUrl) || link.textContent.trim();
+  openArticle(targetUrl);
+  document.querySelector("#home")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 favoriteButton.addEventListener("click", toggleFavorite);

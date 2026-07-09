@@ -404,8 +404,38 @@ input {
   font-weight: 800;
 }
 
+.article a.wiki-link {
+  text-decoration-style: dotted;
+}
+
 .article ul {
   padding-left: 1.35em;
+}
+
+.article table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 14px 0;
+}
+
+.article th,
+.article td {
+  border: 1px solid var(--line);
+  padding: 8px;
+  vertical-align: top;
+}
+
+.article th {
+  background: var(--panel-soft);
+}
+
+.article hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 18px 0;
 }
 
 .affiliate-panel {
