@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0f766e">
+    <meta name="description" content="iPhone Safariで読みやすい遊戯王カードWiki向けWeb/PWAビューア。検索、履歴、お気に入り、保存済み記事、Amazon関連アイテム導線に対応。">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="遊戯王カードWiki">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>遊戯王カードWikiビューア</title>
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#home" aria-label="遊戯王カードWikiビューア ホーム">
+          <span class="brand-mark">遊</span>
+          <span>
+            <strong>遊戯王カードWikiビューア</strong>
+            <small>Safari-ready PWA</small>
+          </span>
+        </a>
+        <nav class="topnav" aria-label="メニュー">
+          <a href="#home">検索</a>
+          <a href="#saved">保存</a>
+          <a href="#items">関連アイテム</a>
+          <a href="./policy.html">ポリシー</a>
+        </nav>
+        <button id="installButton" class="primary-button" type="button" hidden>インストール</button>
+      </header>
+
+      <main>
+        <section class="hero" id="home">
+          <div class="hero-copy">
+            <p class="eyebrow">iPhone Safari / Chrome 対応</p>
+            <h1>遊戯王カードWikiをスマホで読みやすく。</h1>
+            <p>カード名・ページ名・URLから開けるWebビューアです。検索履歴、お気に入り、端末保存に対応し、ホーム画面に追加してPWAとして使えます。</p>
+          </div>
+
+          <form id="searchForm" class="search-card" role="search">
+            <label for="query">カード名・ページ名・URL</label>
+            <div class="search-row">
+              <input id="query" name="query" autocomplete="off" enterkeyhint="search" placeholder="例: ブラック・マジシャン">
+              <button type="submit">検索</button>
+            </div>
+            <div class="quick-actions" aria-label="ショートカット">
+              <button class="chip" data-page="メインページ" type="button">メインページ</button>
+              <button class="chip" data-page="カードリスト" type="button">カードリスト</button>
+              <button class="chip" data-page="デッキ集" type="button">デッキ集</button>
+              <button class="chip" data-page="ルール" type="button">ルール</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="associate-notice" aria-label="Amazonアソシエイト表記">
+          <strong>アソシエイト表記</strong>
+          <span id="associateDisclosure">Amazonのアソシエイトとして、遊戯王カードWikiビューアは適格販売により収入を得ています。</span>
+          <span id="tagStatus" class="setup-pill">タグ未設定</span>
+        </section>
+
+        <section class="status-strip" aria-live="polite">
+          <div>
+            <strong id="statusTitle">準備完了</strong>
+            <p id="statusText">検索すると記事を取得します。保存した記事はオフラインでも開けます。</p>
+          </div>
+          <span id="networkBadge" class="badge">online</span>
+        </section>
+
+        <section class="content-grid">
+          <aside class="side-panel" aria-label="履歴とお気に入り">
+            <div class="tabs" role="tablist" aria-label="リスト切り替え">
+              <button class="tab active" data-list="history" type="button">履歴</button>
+              <button class="tab" data-list="favorites" type="button">お気に入り</button>
+              <button class="tab" data-list="saved" type="button">保存</button>
+            </div>
+            <div id="listPanel" class="item-list"></div>
+          </aside>
+
+          <section class="viewer-panel" aria-live="polite">
+            <div class="viewer-toolbar">
+              <div>
+                <p class="viewer-label">表示中</p>
+                <h2 id="articleTitle">未選択</h2>
+              </div>
+              <div class="toolbar-actions">
+                <button id="favoriteButton" class="tool-button" type="button" disabled>お気に入り</button>
+                <button id="saveButton" class="tool-button" type="button" disabled>保存</button>
+                <a id="openOriginal" class="tool-button" href="https://yugioh-wiki.net/" target="_blank" rel="noopener">原文</a>
+              </div>
+            </div>
+            <article id="article" class="article empty">
+              <h2>まずは検索してください</h2>
+              <p>ページ名やカード名を入れると、スマホで読みやすい本文表示に整えます。うまく取得できない場合でも、原文ボタンから公式ページへ移動できます。</p>
+              <p>このビューアは遊戯王カードWikiの公式サービスではありません。公開時は権利・利用規約を確認し、閲覧補助機能を中心に運用する想定です。</p>
+            </article>
+          </section>
+
+          <aside class="affiliate-panel" id="items" aria-label="関連アイテム">
+            <div class="panel-heading compact">
+              <div>
+                <p class="eyebrow">Amazon</p>
+                <h2>関連アイテム</h2>
+              </div>
+            </div>
+            <p class="panel-note">記事に合わせてAmazon検索へ移動します。価格や在庫はAmazon側で確認してください。</p>
+            <div id="affiliateLinks" class="affiliate-links"></div>
+          </aside>
+        </section>
+
+        <section id="saved" class="info-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Offline</p>
+              <h2>端末に保存して読む</h2>
+            </div>
+            <button id="clearSaved" class="text-button" type="button">保存済みを整理</button>
+          </div>
+          <p>保存した記事はこの端末のブラウザ内に保管されます。通信が不安定な場所でも、保存済みリストから開けます。</p>
+        </section>
+
+        <section class="info-section">
+          <p class="eyebrow">Amazon Associates</p>
+          <h2>収益化方針</h2>
+          <p>この版ではAdSense枠を使わず、Amazonアソシエイトの関連アイテムリンクに一本化しています。記事閲覧を邪魔しないよう、リンクはサイドまたは記事下に控えめに表示します。</p>
+          <p>商品価格、在庫、レビュー、商品画像はこのサイトでは表示しません。リンク先のAmazon.co.jpで最新情報を確認する設計です。</p>
+        </section>
+
+        <section id="about" class="info-section">
+          <p class="eyebrow">About</p>
+          <h2>このサイトについて</h2>
+          <p>遊戯王カードWikiをスマートフォンで読みやすく扱うための非公式ビューアです。検索履歴・お気に入り・保存済み記事など、閲覧補助機能を提供します。</p>
+          <p>本文の著作権は各権利者に帰属します。公開運用では、取得元へのリンク、権利表記、問い合わせ窓口、削除依頼対応を用意してください。</p>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="モバイル操作">
+        <a href="#home">検索</a>
+        <button id="bottomFavorite" type="button" disabled>お気に入り</button>
+        <button id="bottomSave" type="button" disabled>保存</button>
+        <a href="#items">アイテム</a>
+      </nav>
+    </div>
+
+    <template id="listItemTemplate">
+      <button class="list-item" type="button">
+        <span class="list-title"></span>
+        <span class="list-url"></span>
+      </button>
+    </template>
+
+    <template id="affiliateLinkTemplate">
+      <a class="affiliate-card" target="_blank" rel="sponsored noopener">
+        <span class="affiliate-kicker"></span>
+        <strong class="affiliate-title"></strong>
+        <small class="affiliate-text"></small>
+      </a>
+    </template>
+
+    <script src="./vendor/encoding.min.js"></script>
+    <script src="./affiliate-config.js"></script>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
