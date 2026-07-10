@@ -7,13 +7,24 @@ const STORE_KEYS = {
   history: "ygowiki-viewer:history",
   favorites: "ygowiki-viewer:favorites"
 };
-const PAGE_ALIASES = new Map([
+const CARD_ALIASES_URL = "./card-aliases.json";
+const MANUAL_ALIAS_ENTRIES = [
   ["ブラックマジシャン", "ブラック・マジシャン"],
+  ["ブラマジ", "ブラック・マジシャン"],
   ["ブラックマジシャンガール", "ブラック・マジシャン・ガール"],
+  ["ブラマジガール", "ブラック・マジシャン・ガール"],
   ["ブルーアイズホワイトドラゴン", "青眼の白龍"],
+  ["ブルーアイズ・ホワイト・ドラゴン", "青眼の白龍"],
+  ["ブルーアイズ", "青眼の白龍"],
   ["青眼の白竜", "青眼の白龍"],
-  ["レッドアイズブラックドラゴン", "真紅眼の黒竜"]
-]);
+  ["レッドアイズブラックドラゴン", "真紅眼の黒竜"],
+  ["レッドアイズ・ブラックドラゴン", "真紅眼の黒竜"],
+  ["レッドアイズ", "真紅眼の黒竜"],
+  ["はるうらら", "灰流うらら"],
+  ["うらら", "灰流うらら"],
+  ["増殖するG", "増殖するＧ"],
+  ["増G", "増殖するＧ"]
+];
 
 const config = {
   siteName: "遊戯王カードWikiビューア",
@@ -46,6 +57,9 @@ const tagStatus = document.querySelector("#tagStatus");
 let currentArticle = null;
 let currentList = "history";
 let deferredInstallPrompt = null;
+let manualAliasMap = null;
+let fullAliasMap = null;
+let fullAliasMapPromise = null;
 
 const hasAmazonTag = () =>
   Boolean(config.amazonAssociateTag && !config.amazonAssociateTag.includes("YOUR-AMAZON-TAG"));
@@ -110,6 +124,55 @@ const decodeEucJpComponent = (value) => {
   }
 };
 
+const toKatakana = (value) =>
+  Array.from(value).map((char) => {
+    const code = char.charCodeAt(0);
+    return code >= 0x3041 && code <= 0x3096 ? String.fromCharCode(code + 0x60) : char;
+  }).join("");
+
+const removeCardBrackets = (value) =>
+  value.trim().replace(/^《/, "").replace(/》$/, "").trim();
+
+const aliasKey = (value) =>
+  toKatakana(removeCardBrackets(value))
+    .replace(/[・･ \u3000\-‐‑‒–—－ー／\/＿_]/g, "")
+    .toLowerCase();
+
+const getManualAliasMap = () => {
+  if (manualAliasMap) return manualAliasMap;
+
+  manualAliasMap = new Map();
+  for (const [alias, pageName] of MANUAL_ALIAS_ENTRIES) {
+    manualAliasMap.set(aliasKey(alias), pageName);
+    manualAliasMap.set(aliasKey(pageName), pageName);
+  }
+  return manualAliasMap;
+};
+
+const loadFullAliasMap = async () => {
+  if (fullAliasMap) return fullAliasMap;
+  if (!fullAliasMapPromise) {
+    fullAliasMapPromise = fetch(CARD_ALIASES_URL)
+      .then((response) => {
+        if (!response.ok) throw new Error("alias dictionary unavailable");
+        return response.json();
+      })
+      .then((data) => {
+        const map = new Map(getManualAliasMap());
+        Object.entries(data.aliases || {}).forEach(([key, pageName]) => {
+          if (!map.has(key)) map.set(key, pageName);
+        });
+        fullAliasMap = map;
+        return map;
+      })
+      .catch(() => {
+        fullAliasMap = getManualAliasMap();
+        return fullAliasMap;
+      });
+  }
+  return fullAliasMapPromise;
+};
+
 const pageNameFromWikiUrl = (url) => {
   try {
     const parsed = new URL(url, WIKI_BASE);
@@ -128,17 +191,28 @@ const pageNameFromWikiUrl = (url) => {
   }
 };
 
-const normalizePageName = (value) => {
+const normalizePageName = async (value) => {
   const trimmed = value.trim();
-  const compact = trimmed.replace(/[・\s　]/g, "");
-  return PAGE_ALIASES.get(compact) || trimmed;
+  const key = aliasKey(trimmed);
+  const manualAlias = getManualAliasMap().get(key);
+  if (manualAlias) return manualAlias;
+
+  const aliases = await loadFullAliasMap();
+  return aliases.get(key) || trimmed;
 };
 
-const normalizeUrl = (value) => {
+const normalizeTarget = async (value) => {
   const trimmed = value.trim();
-  if (!trimmed) return WIKI_BASE;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `${WIKI_BASE}index.php?${encodeYgoPageName(normalizePageName(trimmed))}`;
+  if (!trimmed) return { url: WIKI_BASE, pageName: "遊戯王カードWiki" };
+  if (/^https?:\/\//i.test(trimmed)) {
+    return { url: trimmed, pageName: pageNameFromWikiUrl(trimmed) || trimmed };
+  }
+
+  const pageName = await normalizePageName(trimmed);
+  return {
+    url: `${WIKI_BASE}index.php?${encodeYgoPageName(pageName)}`,
+    pageName
+  };
 };
 
 const titleFromUrl = (url, fallback) => {
@@ -456,9 +530,13 @@ const showArticle = ({ title, url, content, fromSaved = false }) => {
 };
 
 const openArticle = async (value) => {
-  const url = normalizeUrl(value);
-  const title = titleFromUrl(url, /^https?:\/\//i.test(value.trim()) ? value : normalizePageName(value));
-  const saved = readList("saved").find((item) => item.url === url || item.title === value.trim());
+  const target = await normalizeTarget(value);
+  const url = target.url;
+  const title = titleFromUrl(url, target.pageName);
+  const rawTitle = value.trim();
+  const saved = readList("saved").find((item) =>
+    item.url === url || item.title === rawTitle || item.title === target.pageName
+  );
 
   articleTitle.textContent = title;
   openOriginal.href = url;
