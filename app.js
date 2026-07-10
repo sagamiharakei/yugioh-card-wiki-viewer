@@ -57,6 +57,9 @@ const affiliateLinks = document.querySelector("#affiliateLinks");
 const affiliateTemplate = document.querySelector("#affiliateLinkTemplate");
 const associateDisclosure = document.querySelector("#associateDisclosure");
 const tagStatus = document.querySelector("#tagStatus");
+const recentSection = document.querySelector("#recent");
+const recentToggle = document.querySelector("#recentToggle");
+const recentContent = document.querySelector("#recentContent");
 const recentCards = document.querySelector("#recentCards");
 const recentRefresh = document.querySelector("#recentRefresh");
 const listSummaryButtons = document.querySelectorAll("[data-list-target]");
@@ -68,6 +71,7 @@ let deferredInstallPrompt = null;
 let manualAliasMap = null;
 let fullAliasMap = null;
 let fullAliasMapPromise = null;
+let recentLoaded = false;
 
 const hasAmazonTag = () =>
   Boolean(config.amazonAssociateTag && !config.amazonAssociateTag.includes("YOUR-AMAZON-TAG"));
@@ -484,6 +488,7 @@ const renderRecentCards = (items) => {
 const loadRecentCards = async () => {
   if (!recentCards) return;
 
+  recentLoaded = true;
   recentCards.innerHTML = '<p class="list-url">最近更新されたカードを読み込み中です。</p>';
   if (recentRefresh) recentRefresh.disabled = true;
 
@@ -500,6 +505,19 @@ const loadRecentCards = async () => {
     `;
   } finally {
     if (recentRefresh) recentRefresh.disabled = false;
+  }
+};
+
+const setRecentCollapsed = (collapsed, shouldLoad = true) => {
+  if (!recentSection || !recentToggle || !recentContent) return;
+
+  recentSection.classList.toggle("is-collapsed", collapsed);
+  recentToggle.textContent = collapsed ? "表示" : "閉じる";
+  recentToggle.setAttribute("aria-expanded", String(!collapsed));
+  recentContent.hidden = collapsed;
+
+  if (!collapsed && shouldLoad && !recentLoaded) {
+    loadRecentCards();
   }
 };
 
@@ -839,7 +857,14 @@ clearHistory?.addEventListener("click", () => {
   }
 });
 
-recentRefresh?.addEventListener("click", loadRecentCards);
+recentRefresh?.addEventListener("click", () => {
+  setRecentCollapsed(false, false);
+  loadRecentCards();
+});
+
+recentToggle?.addEventListener("click", () => {
+  setRecentCollapsed(!recentSection.classList.contains("is-collapsed"));
+});
 
 window.addEventListener("online", setNetworkState);
 window.addEventListener("offline", setNetworkState);
@@ -869,4 +894,4 @@ setNetworkState();
 renderList();
 renderAffiliateLinks();
 syncActionButtons();
-loadRecentCards();
+setRecentCollapsed(true);

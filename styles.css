@@ -379,6 +379,14 @@ input {
   padding: 18px;
 }
 
+.recent-section.is-collapsed {
+  padding-bottom: 14px;
+}
+
+.recent-section.is-collapsed .recent-content {
+  display: none;
+}
+
 .recent-section .panel-note {
   margin-bottom: 12px;
 }
@@ -676,6 +684,13 @@ input {
   gap: 12px;
 }
 
+.section-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .section-heading h2,
 .info-section h2 {
   margin-bottom: 8px;
@@ -735,6 +750,7 @@ input {
   .search-row,
   .viewer-toolbar,
   .section-heading,
+  .section-actions,
   .associate-notice,
   .status-strip {
     align-items: stretch;
