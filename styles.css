@@ -241,6 +241,10 @@ input {
   align-items: center;
 }
 
+.memory-lane.with-clear {
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+}
+
 .memory-heading {
   display: flex;
   min-height: 34px;
@@ -297,6 +301,28 @@ input {
 .memory-chip:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+
+.memory-clear {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.memory-clear:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.memory-clear:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: .55;
 }
 
 .memory-empty {
@@ -716,6 +742,10 @@ input {
   }
 
   .memory-lane {
+    grid-template-columns: 1fr;
+  }
+
+  .memory-lane.with-clear {
     grid-template-columns: 1fr;
   }
 

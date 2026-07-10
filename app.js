@@ -48,6 +48,7 @@ const saveButton = document.querySelector("#saveButton");
 const favoriteButton = document.querySelector("#favoriteButton");
 const bottomSave = document.querySelector("#bottomSave");
 const bottomFavorite = document.querySelector("#bottomFavorite");
+const clearHistory = document.querySelector("#clearHistory");
 const clearSaved = document.querySelector("#clearSaved");
 const installButton = document.querySelector("#installButton");
 const listPanel = document.querySelector("#listPanel");
@@ -708,6 +709,7 @@ const syncListSummary = () => {
     button.classList.toggle("active", key === currentList);
     button.querySelector("[data-count]").textContent = `${count}件`;
   });
+  if (clearHistory) clearHistory.disabled = readList("history").length === 0;
 };
 
 const openStoredItem = (item, listKey = currentList) => {
@@ -826,6 +828,14 @@ clearSaved.addEventListener("click", () => {
   if (confirm("保存済み記事をすべて削除しますか？")) {
     writeList("saved", []);
     setStatus("整理しました", "保存済み記事を削除しました。");
+  }
+});
+
+clearHistory?.addEventListener("click", () => {
+  if (!readList("history").length) return;
+  if (confirm("履歴をすべて削除しますか？")) {
+    writeList("history", []);
+    setStatus("履歴を削除しました", "検索履歴を空にしました。");
   }
 });
 
