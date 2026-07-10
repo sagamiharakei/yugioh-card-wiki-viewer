@@ -233,7 +233,11 @@ const htmlToReadableHtml = (html) => {
   ].join(",")).forEach((node) => node.remove());
 
   const title = doc.querySelector("h1, title")?.textContent?.trim();
-  const main = doc.querySelector("#body, #content, main, article, .contents") || doc.body;
+  const contentCell = doc.querySelector([
+    "body > table > tbody > tr > td:not(.menubar)",
+    "body > table > tr > td:not(.menubar)"
+  ].join(","));
+  const main = contentCell || doc.querySelector("#body, #content, main, article, .contents") || doc.body;
 
   main.querySelectorAll("*").forEach((element) => {
     [...element.attributes].forEach((attribute) => {
