@@ -1,5 +1,6 @@
 const WIKI_BASE = "https://yugioh-wiki.net/";
 const ARTICLE_API = "./api/article";
+const RECENT_API = "./api/recent";
 const READER_BASE = "https://r.jina.ai/http://r.jina.ai/http://";
 const ALL_ORIGINS_BASE = "https://api.allorigins.win/raw?url=";
 const STORE_KEYS = {
@@ -53,6 +54,8 @@ const affiliateLinks = document.querySelector("#affiliateLinks");
 const affiliateTemplate = document.querySelector("#affiliateLinkTemplate");
 const associateDisclosure = document.querySelector("#associateDisclosure");
 const tagStatus = document.querySelector("#tagStatus");
+const recentCards = document.querySelector("#recentCards");
+const recentRefresh = document.querySelector("#recentRefresh");
 
 let currentArticle = null;
 let currentList = "history";
@@ -420,6 +423,63 @@ const fetchArticle = async (url) => {
   throw lastError || new Error("ページを取得できませんでした");
 };
 
+const renderRecentCards = (items) => {
+  if (!recentCards) return;
+  recentCards.innerHTML = "";
+
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "list-url";
+    empty.textContent = "最近更新されたカードを取得できませんでした。";
+    recentCards.append(empty);
+    return;
+  }
+
+  for (const item of items) {
+    const button = document.createElement("button");
+    button.className = "recent-card";
+    button.type = "button";
+
+    const title = document.createElement("strong");
+    title.textContent = item.title || item.pageName;
+
+    const meta = document.createElement("small");
+    meta.textContent = [item.date, item.time, item.relative ? `${item.relative}前` : ""]
+      .filter(Boolean)
+      .join(" / ");
+
+    button.append(title, meta);
+    button.addEventListener("click", () => {
+      queryInput.value = item.pageName || item.title;
+      openArticle(item.url);
+      document.querySelector(".viewer-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    recentCards.append(button);
+  }
+};
+
+const loadRecentCards = async () => {
+  if (!recentCards) return;
+
+  recentCards.innerHTML = '<p class="list-url">最近更新されたカードを読み込み中です。</p>';
+  if (recentRefresh) recentRefresh.disabled = true;
+
+  try {
+    const endpoint = new URL(RECENT_API, location.href);
+    endpoint.searchParams.set("limit", "10");
+    const response = await fetch(endpoint, { cache: "no-store" });
+    if (!response.ok) throw new Error(`recent ${response.status}`);
+    const data = await response.json();
+    renderRecentCards(Array.isArray(data.items) ? data.items : []);
+  } catch {
+    recentCards.innerHTML = `
+      <p class="list-url">最近更新されたカードを取得できませんでした。公開URLまたはローカルサーバーから開いてください。</p>
+    `;
+  } finally {
+    if (recentRefresh) recentRefresh.disabled = false;
+  }
+};
+
 const environmentHelp = () => {
   if (location.protocol === "file:") {
     return "現在 file:// で開いているため、記事取得APIを使えません。local-server.mjs またはCloudflare Pagesなどの公開URLから開いてください。";
@@ -675,6 +735,8 @@ clearSaved.addEventListener("click", () => {
   }
 });
 
+recentRefresh?.addEventListener("click", loadRecentCards);
+
 window.addEventListener("online", setNetworkState);
 window.addEventListener("offline", setNetworkState);
 
@@ -703,3 +765,4 @@ setNetworkState();
 renderList();
 renderAffiliateLinks();
 syncActionButtons();
+loadRecentCards();

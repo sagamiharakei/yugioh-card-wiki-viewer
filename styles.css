@@ -145,6 +145,7 @@ p {
 .side-panel,
 .info-section,
 .affiliate-panel,
+.recent-section,
 .associate-notice {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -296,6 +297,49 @@ input {
 .badge.offline {
   background: #fff1f0;
   color: #b42318;
+}
+
+.recent-section {
+  margin-top: 16px;
+  padding: 18px;
+}
+
+.recent-section .panel-note {
+  margin-bottom: 12px;
+}
+
+.recent-card-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.recent-card {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  min-height: 86px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  color: var(--text);
+  text-align: left;
+}
+
+.recent-card:hover {
+  border-color: var(--accent);
+  background: #fff;
+}
+
+.recent-card strong {
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.recent-card small {
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .status-strip p {
@@ -558,6 +602,10 @@ input {
     grid-template-columns: 1fr;
   }
 
+  .recent-card-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .side-panel,
   .affiliate-panel {
     position: static;
@@ -581,6 +629,7 @@ input {
   .hero-copy,
   .search-card,
   .article,
+  .recent-section,
   .info-section {
     padding: 16px;
   }
@@ -605,6 +654,10 @@ input {
 
   .item-list {
     max-height: 260px;
+  }
+
+  .recent-card-list {
+    grid-template-columns: 1fr;
   }
 
   .bottom-nav {

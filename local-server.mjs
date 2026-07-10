@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
+import { onRequest as handleRecentRequest } from "./functions/api/recent.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 const port = Number(process.env.PORT || 4173);
@@ -25,6 +26,11 @@ const sendJson = (res, status, body) => {
     "Access-Control-Allow-Origin": "*"
   });
   res.end(JSON.stringify(body));
+};
+
+const sendFetchResponse = async (res, response) => {
+  res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
+  res.end(Buffer.from(await response.arrayBuffer()));
 };
 
 const decodeBody = (buffer, contentType) => {
@@ -101,6 +107,13 @@ createServer(async (req, res) => {
     }
     if (requestUrl.pathname === "/api/article") {
       await handleArticle(req, res, requestUrl);
+      return;
+    }
+    if (requestUrl.pathname === "/api/recent") {
+      const response = await handleRecentRequest({
+        request: new Request(requestUrl.toString(), { method: req.method || "GET" })
+      });
+      await sendFetchResponse(res, response);
       return;
     }
     await serveFile(res, requestUrl.pathname);

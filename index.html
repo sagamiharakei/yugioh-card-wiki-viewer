@@ -32,6 +32,7 @@
         </a>
         <nav class="topnav" aria-label="メニュー">
           <a href="#home">検索</a>
+          <a href="#recent">更新カード</a>
           <a href="#saved">保存</a>
           <a href="#items">関連アイテム</a>
           <a href="./policy.html">ポリシー</a>
@@ -66,6 +67,20 @@
               <button class="chip" data-page="ルール" type="button">ルール</button>
             </div>
           </form>
+        </section>
+
+        <section class="recent-section" id="recent" aria-label="最近更新されたカード">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Recent Updates</p>
+              <h2>最近更新されたカード</h2>
+            </div>
+            <button id="recentRefresh" class="text-button" type="button">更新</button>
+          </div>
+          <p class="panel-note">遊戯王カードWikiの最終更新から、カードページだけを10件表示します。</p>
+          <div id="recentCards" class="recent-card-list" aria-live="polite">
+            <p class="list-url">読み込み中です。</p>
+          </div>
         </section>
 
         <section class="associate-notice" aria-label="Amazonアソシエイト表記">
