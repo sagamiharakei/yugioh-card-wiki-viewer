@@ -59,6 +59,7 @@ const tagStatus = document.querySelector("#tagStatus");
 const recentCards = document.querySelector("#recentCards");
 const recentRefresh = document.querySelector("#recentRefresh");
 const listSummaryButtons = document.querySelectorAll("[data-list-target]");
+const memoryStrips = document.querySelectorAll("[data-memory-strip]");
 
 let currentArticle = null;
 let currentList = "history";
@@ -694,11 +695,11 @@ const saveCurrentArticle = () => {
   setStatus("保存しました", "この端末でオフライン表示できるようになりました。");
 };
 
-const currentListLabel = () => ({
+const currentListLabel = (key = currentList) => ({
   history: "履歴",
   favorites: "お気に入り",
   saved: "保存済み"
-})[currentList];
+})[key];
 
 const syncListSummary = () => {
   listSummaryButtons.forEach((button) => {
@@ -709,9 +710,46 @@ const syncListSummary = () => {
   });
 };
 
+const openStoredItem = (item, listKey = currentList) => {
+  if (item.content) {
+    showArticle({ ...item, fromSaved: listKey === "saved" });
+    setStatus(`${currentListLabel(listKey)}を表示`, "端末内のリストから開きました。");
+    return;
+  }
+  queryInput.value = item.title;
+  openArticle(item.url);
+};
+
+const renderSearchMemory = () => {
+  memoryStrips.forEach((strip) => {
+    const key = strip.dataset.memoryStrip;
+    strip.innerHTML = "";
+
+    const items = readList(key).slice(0, 10);
+    if (!items.length) {
+      const empty = document.createElement("span");
+      empty.className = "memory-empty";
+      empty.textContent = "まだありません";
+      strip.append(empty);
+      return;
+    }
+
+    for (const item of items) {
+      const button = document.createElement("button");
+      button.className = "memory-chip";
+      button.type = "button";
+      button.textContent = item.title.replace(/^遊戯王カードWiki\s*-\s*/, "");
+      button.title = item.title;
+      button.addEventListener("click", () => openStoredItem(item, key));
+      strip.append(button);
+    }
+  });
+};
+
 const renderList = () => {
   listPanel.innerHTML = "";
   syncListSummary();
+  renderSearchMemory();
 
   const items = readList(currentList);
   if (!items.length) {
@@ -727,13 +765,7 @@ const renderList = () => {
     node.querySelector(".list-title").textContent = item.title;
     node.querySelector(".list-url").textContent = item.url;
     node.addEventListener("click", () => {
-      if (item.content) {
-        showArticle({ ...item, fromSaved: currentList === "saved" });
-        setStatus(`${currentListLabel()}を表示`, "端末内のリストから開きました。");
-      } else {
-        queryInput.value = item.title;
-        openArticle(item.url);
-      }
+      openStoredItem(item, currentList);
     });
     listPanel.append(node);
   }
@@ -771,13 +803,6 @@ listSummaryButtons.forEach((button) => {
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   openArticle(queryInput.value);
-});
-
-document.querySelectorAll("[data-page]").forEach((button) => {
-  button.addEventListener("click", () => {
-    queryInput.value = button.dataset.page;
-    openArticle(button.dataset.page);
-  });
 });
 
 article.addEventListener("click", (event) => {
