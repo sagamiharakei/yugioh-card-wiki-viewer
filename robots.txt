@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://yugioh-card-wiki-viewer.pages.dev/sitemap.xml
