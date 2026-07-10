@@ -7,6 +7,13 @@ const STORE_KEYS = {
   history: "ygowiki-viewer:history",
   favorites: "ygowiki-viewer:favorites"
 };
+const PAGE_ALIASES = new Map([
+  ["ブラックマジシャン", "ブラック・マジシャン"],
+  ["ブラックマジシャンガール", "ブラック・マジシャン・ガール"],
+  ["ブルーアイズホワイトドラゴン", "青眼の白龍"],
+  ["青眼の白竜", "青眼の白龍"],
+  ["レッドアイズブラックドラゴン", "真紅眼の黒竜"]
+]);
 
 const config = {
   siteName: "遊戯王カードWikiビューア",
@@ -121,11 +128,17 @@ const pageNameFromWikiUrl = (url) => {
   }
 };
 
+const normalizePageName = (value) => {
+  const trimmed = value.trim();
+  const compact = trimmed.replace(/[・\s　]/g, "");
+  return PAGE_ALIASES.get(compact) || trimmed;
+};
+
 const normalizeUrl = (value) => {
   const trimmed = value.trim();
   if (!trimmed) return WIKI_BASE;
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `${WIKI_BASE}index.php?${encodeYgoPageName(trimmed)}`;
+  return `${WIKI_BASE}index.php?${encodeYgoPageName(normalizePageName(trimmed))}`;
 };
 
 const titleFromUrl = (url, fallback) => {
@@ -213,6 +226,18 @@ const isWikiUrl = (url) => {
 
 const htmlToReadableHtml = (html) => {
   const doc = new DOMParser().parseFromString(html, "text/html");
+  const rawTitle = doc.querySelector("title")?.textContent?.trim() || "";
+  if (rawTitle.endsWith(" の編集") || doc.querySelector("form[action*='cmd=edit'], textarea[name='msg']")) {
+    const pageName = rawTitle
+      .replace(/^遊戯王カードWiki\s*-\s*/, "")
+      .replace(/\s*の編集$/, "");
+    return `
+      <h1>ページが見つかりませんでした</h1>
+      <p>「${escapeHtml(pageName || "入力したページ名")}」は遊戯王カードWiki側で存在しないページとして返されました。</p>
+      <p>中点や正式表記を含めて検索し直してください。例: ブラック・マジシャン</p>
+    `;
+  }
+
   doc.querySelectorAll([
     "script",
     "style",
@@ -227,7 +252,9 @@ const htmlToReadableHtml = (html) => {
     "#header",
     "#navigator",
     "#menubar",
+    "#footer",
     ".menubar",
+    ".footer",
     ".jumpmenu",
     "ins.adsbygoogle"
   ].join(",")).forEach((node) => node.remove());
@@ -430,7 +457,7 @@ const showArticle = ({ title, url, content, fromSaved = false }) => {
 
 const openArticle = async (value) => {
   const url = normalizeUrl(value);
-  const title = titleFromUrl(url, value);
+  const title = titleFromUrl(url, /^https?:\/\//i.test(value.trim()) ? value : normalizePageName(value));
   const saved = readList("saved").find((item) => item.url === url || item.title === value.trim());
 
   articleTitle.textContent = title;
