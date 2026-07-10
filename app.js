@@ -24,7 +24,9 @@ const MANUAL_ALIAS_ENTRIES = [
   ["はるうらら", "灰流うらら"],
   ["うらら", "灰流うらら"],
   ["増殖するG", "増殖するＧ"],
-  ["増G", "増殖するＧ"]
+  ["増G", "増殖するＧ"],
+  ["ニビル", "《原始生命態ニビル》"],
+  ["原始生命態ニビル", "《原始生命態ニビル》"]
 ];
 
 const config = {
@@ -56,6 +58,7 @@ const associateDisclosure = document.querySelector("#associateDisclosure");
 const tagStatus = document.querySelector("#tagStatus");
 const recentCards = document.querySelector("#recentCards");
 const recentRefresh = document.querySelector("#recentRefresh");
+const listSummaryButtons = document.querySelectorAll("[data-list-target]");
 
 let currentArticle = null;
 let currentList = "history";
@@ -194,8 +197,12 @@ const pageNameFromWikiUrl = (url) => {
   }
 };
 
+const isCardPageName = (value = "") => /^《.+》$/.test(value.trim());
+
 const normalizePageName = async (value) => {
   const trimmed = value.trim();
+  if (isCardPageName(trimmed)) return trimmed;
+
   const key = aliasKey(trimmed);
   const manualAlias = getManualAliasMap().get(key);
   if (manualAlias) return manualAlias;
@@ -217,6 +224,20 @@ const normalizeTarget = async (value) => {
     pageName
   };
 };
+
+const toCardPageName = (value = "") => {
+  const pageName = removeCardBrackets(value);
+  return pageName ? `《${pageName}》` : "";
+};
+
+const canRetryAsCardPage = (rawValue, pageName = "") => {
+  const raw = rawValue.trim();
+  if (!raw || /^https?:\/\//i.test(raw)) return false;
+  return !isCardPageName(raw) && !isCardPageName(pageName);
+};
+
+const isMissingPageContent = (content = "") =>
+  /ページが見つかりませんでした|存在しないページ|-\s*[^<\n]+の編集|cmd=edit|textarea\s+name=/.test(content);
 
 const titleFromUrl = (url, fallback) => {
   const cleanFallback = fallback?.trim();
@@ -614,8 +635,30 @@ const openArticle = async (value) => {
   }
 
   try {
-    const content = await fetchArticle(url);
-    showArticle({ title, url, content });
+    let content = await fetchArticle(url);
+    let displayTitle = title;
+    let displayUrl = url;
+
+    if (isMissingPageContent(content) && canRetryAsCardPage(rawTitle, target.pageName)) {
+      const cardPageName = toCardPageName(target.pageName || rawTitle);
+      const retryTarget = await normalizeTarget(cardPageName);
+
+      if (retryTarget.url !== url) {
+        try {
+          const retryContent = await fetchArticle(retryTarget.url);
+          if (!isMissingPageContent(retryContent)) {
+            content = retryContent;
+            displayUrl = retryTarget.url;
+            displayTitle = titleFromUrl(displayUrl, retryTarget.pageName);
+            queryInput.value = retryTarget.pageName;
+          }
+        } catch {
+          // 元の検索結果をそのまま表示します。
+        }
+      }
+    }
+
+    showArticle({ title: displayTitle, url: displayUrl, content });
     setStatus("表示しました", "必要なら保存しておくとオフラインでも読めます。");
   } catch (error) {
     if (saved) {
@@ -657,8 +700,19 @@ const currentListLabel = () => ({
   saved: "保存済み"
 })[currentList];
 
+const syncListSummary = () => {
+  listSummaryButtons.forEach((button) => {
+    const key = button.dataset.listTarget;
+    const count = readList(key).length;
+    button.classList.toggle("active", key === currentList);
+    button.querySelector("[data-count]").textContent = `${count}件`;
+  });
+};
+
 const renderList = () => {
   listPanel.innerHTML = "";
+  syncListSummary();
+
   const items = readList(currentList);
   if (!items.length) {
     const empty = document.createElement("p");
@@ -685,6 +739,17 @@ const renderList = () => {
   }
 };
 
+const selectList = (key, scrollIntoView = false) => {
+  currentList = key;
+  document.querySelectorAll(".tab").forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.list === key);
+  });
+  renderList();
+  if (scrollIntoView) {
+    document.querySelector(".side-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+};
+
 const setupAffiliateDisclosure = () => {
   associateDisclosure.textContent = `Amazonのアソシエイトとして、${config.siteOwnerName}は適格販売により収入を得ています。`;
   tagStatus.textContent = hasAmazonTag() ? "タグ設定済み" : "タグ未設定";
@@ -693,9 +758,13 @@ const setupAffiliateDisclosure = () => {
 
 document.querySelectorAll(".tab").forEach((button) => {
   button.addEventListener("click", () => {
-    currentList = button.dataset.list;
-    document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab === button));
-    renderList();
+    selectList(button.dataset.list);
+  });
+});
+
+listSummaryButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    selectList(button.dataset.listTarget, true);
   });
 });
 
