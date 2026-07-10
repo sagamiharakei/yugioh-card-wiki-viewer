@@ -771,7 +771,6 @@ const renderList = () => {
   for (const item of items) {
     const node = listTemplate.content.firstElementChild.cloneNode(true);
     node.querySelector(".list-title").textContent = item.title;
-    node.querySelector(".list-url").textContent = item.url;
     node.addEventListener("click", () => {
       openStoredItem(item, currentList);
     });

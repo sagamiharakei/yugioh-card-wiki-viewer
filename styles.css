@@ -263,12 +263,14 @@ input {
 }
 
 .recent-section {
+  width: calc(100% - 236px);
   margin-top: 16px;
-  padding: 18px;
+  padding: 0;
+  overflow: hidden;
 }
 
 .recent-section.is-collapsed {
-  padding-bottom: 14px;
+  padding-bottom: 0;
 }
 
 .recent-section.is-collapsed .recent-content {
@@ -277,6 +279,10 @@ input {
 
 .recent-section .panel-note {
   margin-bottom: 12px;
+}
+
+.recent-content {
+  padding: 0 14px 14px;
 }
 
 .recent-card-list {
@@ -334,17 +340,23 @@ input {
   overflow: hidden;
 }
 
+.recent-section .section-heading,
 .side-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
+  min-height: 74px;
 }
 
 .side-panel-header h2 {
   margin-bottom: 0;
   font-size: 18px;
+}
+
+.recent-section .section-heading h2 {
+  margin-bottom: 0;
 }
 
 .side-panel-actions {
@@ -398,8 +410,7 @@ input {
   text-align: left;
 }
 
-.list-title,
-.list-url {
+.list-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -679,6 +690,10 @@ input {
 }
 
 @media (max-width: 1040px) {
+  .recent-section {
+    width: 100%;
+  }
+
   .content-grid {
     grid-template-columns: 1fr;
   }

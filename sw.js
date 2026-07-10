@@ -1,4 +1,4 @@
-const CACHE_NAME = "yugioh-card-wiki-viewer-v17";
+const CACHE_NAME = "yugioh-card-wiki-viewer-v18";
 const APP_SHELL = [
   "./",
   "./index.html",
