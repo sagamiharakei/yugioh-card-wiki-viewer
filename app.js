@@ -373,7 +373,19 @@ const htmlToReadableHtml = (html) => {
   main.querySelectorAll("*").forEach((element) => {
     [...element.attributes].forEach((attribute) => {
       const name = attribute.name.toLowerCase();
-      if (name.startsWith("on") || name === "style") element.removeAttribute(attribute.name);
+      if ([
+        "align",
+        "border",
+        "cellpadding",
+        "cellspacing",
+        "height",
+        "nowrap",
+        "size",
+        "valign",
+        "width"
+      ].includes(name) || name.startsWith("on") || name === "style") {
+        element.removeAttribute(attribute.name);
+      }
     });
   });
 

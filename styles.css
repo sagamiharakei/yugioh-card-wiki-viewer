@@ -20,6 +20,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -27,6 +28,7 @@ body {
   min-height: 100vh;
   background: linear-gradient(180deg, #dff3ee 0, var(--bg) 340px);
   color: var(--text);
+  overflow-x: hidden;
 }
 
 button,
@@ -559,6 +561,14 @@ input {
   line-height: 1.85;
   overflow-wrap: anywhere;
   overflow-x: hidden;
+  overflow-x: clip;
+}
+
+.article *,
+.article *::before,
+.article *::after {
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 .article.empty {
@@ -570,7 +580,18 @@ input {
 .article h3 {
   line-height: 1.38;
   margin: 1.25em 0 .55em;
+  min-width: 0;
   overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.article p,
+.article li,
+.article dd,
+.article dt {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .article h1 {
@@ -588,6 +609,8 @@ input {
 .article a {
   color: var(--accent-strong);
   font-weight: 800;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .article a.wiki-link {
@@ -596,6 +619,36 @@ input {
 
 .article ul {
   padding-left: 1.35em;
+}
+
+.article ol {
+  padding-left: 1.5em;
+}
+
+.article img,
+.article video,
+.article canvas {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
+.article pre,
+.article code,
+.article kbd,
+.article samp {
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.article pre {
+  overflow-x: auto;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
 }
 
 .article table {
@@ -612,6 +665,10 @@ input {
   border: 1px solid var(--line);
   padding: 8px;
   vertical-align: top;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .article th {
