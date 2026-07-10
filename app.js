@@ -51,6 +51,9 @@ const bottomFavorite = document.querySelector("#bottomFavorite");
 const clearHistory = document.querySelector("#clearHistory");
 const clearSaved = document.querySelector("#clearSaved");
 const installButton = document.querySelector("#installButton");
+const sidePanel = document.querySelector("#listSection");
+const listToggle = document.querySelector("#listToggle");
+const listContent = document.querySelector("#listContent");
 const listPanel = document.querySelector("#listPanel");
 const listTemplate = document.querySelector("#listItemTemplate");
 const affiliateLinks = document.querySelector("#affiliateLinks");
@@ -62,8 +65,6 @@ const recentToggle = document.querySelector("#recentToggle");
 const recentContent = document.querySelector("#recentContent");
 const recentCards = document.querySelector("#recentCards");
 const recentRefresh = document.querySelector("#recentRefresh");
-const listSummaryButtons = document.querySelectorAll("[data-list-target]");
-const memoryStrips = document.querySelectorAll("[data-memory-strip]");
 
 let currentArticle = null;
 let currentList = "history";
@@ -257,11 +258,13 @@ const titleFromUrl = (url, fallback) => {
 };
 
 const setStatus = (title, text) => {
+  if (!statusTitle || !statusText) return;
   statusTitle.textContent = title;
   statusText.textContent = text;
 };
 
 const setNetworkState = () => {
+  if (!networkBadge) return;
   const online = navigator.onLine;
   networkBadge.textContent = online ? "online" : "offline";
   networkBadge.classList.toggle("offline", !online);
@@ -738,13 +741,7 @@ const currentListLabel = (key = currentList) => ({
   saved: "保存済み"
 })[key];
 
-const syncListSummary = () => {
-  listSummaryButtons.forEach((button) => {
-    const key = button.dataset.listTarget;
-    const count = readList(key).length;
-    button.classList.toggle("active", key === currentList);
-    button.querySelector("[data-count]").textContent = `${count}件`;
-  });
+const syncListControls = () => {
   if (clearHistory) clearHistory.disabled = readList("history").length === 0;
 };
 
@@ -758,36 +755,9 @@ const openStoredItem = (item, listKey = currentList) => {
   openArticle(item.url);
 };
 
-const renderSearchMemory = () => {
-  memoryStrips.forEach((strip) => {
-    const key = strip.dataset.memoryStrip;
-    strip.innerHTML = "";
-
-    const items = readList(key).slice(0, 10);
-    if (!items.length) {
-      const empty = document.createElement("span");
-      empty.className = "memory-empty";
-      empty.textContent = "まだありません";
-      strip.append(empty);
-      return;
-    }
-
-    for (const item of items) {
-      const button = document.createElement("button");
-      button.className = "memory-chip";
-      button.type = "button";
-      button.textContent = item.title.replace(/^遊戯王カードWiki\s*-\s*/, "");
-      button.title = item.title;
-      button.addEventListener("click", () => openStoredItem(item, key));
-      strip.append(button);
-    }
-  });
-};
-
 const renderList = () => {
   listPanel.innerHTML = "";
-  syncListSummary();
-  renderSearchMemory();
+  syncListControls();
 
   const items = readList(currentList);
   if (!items.length) {
@@ -816,8 +786,18 @@ const selectList = (key, scrollIntoView = false) => {
   });
   renderList();
   if (scrollIntoView) {
+    setListCollapsed(false);
     document.querySelector(".side-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+};
+
+const setListCollapsed = (collapsed) => {
+  if (!sidePanel || !listToggle || !listContent) return;
+
+  sidePanel.classList.toggle("is-collapsed", collapsed);
+  listToggle.textContent = collapsed ? "表示" : "閉じる";
+  listToggle.setAttribute("aria-expanded", String(!collapsed));
+  listContent.hidden = collapsed;
 };
 
 const setupAffiliateDisclosure = () => {
@@ -829,12 +809,6 @@ const setupAffiliateDisclosure = () => {
 document.querySelectorAll(".tab").forEach((button) => {
   button.addEventListener("click", () => {
     selectList(button.dataset.list);
-  });
-});
-
-listSummaryButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    selectList(button.dataset.listTarget, true);
   });
 });
 
@@ -874,6 +848,10 @@ clearHistory?.addEventListener("click", () => {
   }
 });
 
+listToggle?.addEventListener("click", () => {
+  setListCollapsed(!sidePanel.classList.contains("is-collapsed"));
+});
+
 recentRefresh?.addEventListener("click", () => {
   setRecentCollapsed(false, false);
   loadRecentCards();
@@ -909,6 +887,7 @@ if ("serviceWorker" in navigator) {
 setupAffiliateDisclosure();
 setNetworkState();
 renderList();
+setListCollapsed(true);
 renderAffiliateLinks();
 syncActionButtons();
 setRecentCollapsed(true);

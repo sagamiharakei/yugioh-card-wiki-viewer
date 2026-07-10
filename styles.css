@@ -142,7 +142,6 @@ p {
 
 .hero-copy,
 .search-card,
-.status-strip,
 .viewer-panel,
 .side-panel,
 .info-section,
@@ -230,113 +229,7 @@ input {
   font-size: 16px;
 }
 
-.search-memory {
-  display: grid;
-  gap: 7px;
-  margin-top: 10px;
-}
-
-.memory-lane {
-  display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
-  gap: 8px;
-  align-items: center;
-}
-
-.memory-lane.with-clear {
-  grid-template-columns: 112px minmax(0, 1fr) auto;
-}
-
-.memory-heading {
-  display: flex;
-  min-height: 34px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel-soft);
-  color: var(--text);
-}
-
-.memory-heading span {
-  color: var(--accent-strong);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.memory-heading strong {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.memory-heading.active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.memory-strip {
-  display: flex;
-  gap: 7px;
-  min-width: 0;
-  overflow-x: auto;
-  padding-bottom: 1px;
-  scrollbar-width: thin;
-}
-
-.memory-chip {
-  flex: 0 0 auto;
-  max-width: 220px;
-  min-height: 34px;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--text);
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.memory-chip:hover {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.memory-clear {
-  min-height: 34px;
-  padding: 6px 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--accent-strong);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.memory-clear:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-}
-
-.memory-clear:disabled {
-  color: var(--muted);
-  cursor: default;
-  opacity: .55;
-}
-
-.memory-empty {
-  display: inline-flex;
-  min-height: 34px;
-  align-items: center;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.associate-notice,
-.status-strip {
+.associate-notice {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -354,8 +247,7 @@ input {
   line-height: 1.6;
 }
 
-.setup-pill,
-.badge {
+.setup-pill {
   flex: 0 0 auto;
   padding: 5px 9px;
   border-radius: 999px;
@@ -365,15 +257,9 @@ input {
   font-weight: 800;
 }
 
-.setup-pill.ready,
-.badge {
+.setup-pill.ready {
   background: var(--accent-soft);
   color: var(--accent-strong);
-}
-
-.badge.offline {
-  background: #fff1f0;
-  color: #b42318;
 }
 
 .recent-section {
@@ -427,14 +313,9 @@ input {
   line-height: 1.45;
 }
 
-.status-strip p {
-  margin-bottom: 0;
-  color: var(--muted);
-}
-
 .content-grid {
   display: grid;
-  grid-template-columns: 248px minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr) 220px;
   gap: 16px;
   align-items: start;
 }
@@ -443,14 +324,42 @@ input {
   min-width: 0;
 }
 
-.side-panel,
 .affiliate-panel {
   position: sticky;
   top: 12px;
 }
 
 .side-panel {
+  grid-column: 1;
   overflow: hidden;
+}
+
+.side-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.side-panel-header h2 {
+  margin-bottom: 0;
+  font-size: 18px;
+}
+
+.side-panel-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.list-content[hidden] {
+  display: none;
+}
+
+.side-panel.is-collapsed {
+  box-shadow: none;
 }
 
 .tabs {
@@ -502,9 +411,15 @@ input {
 }
 
 .viewer-panel {
+  grid-column: 1;
   min-height: 68vh;
   overflow: hidden;
   min-width: 0;
+}
+
+.affiliate-panel {
+  grid-column: 2;
+  grid-row: 1 / span 2;
 }
 
 .viewer-toolbar {
@@ -773,7 +688,10 @@ input {
   }
 
   .side-panel,
+  .viewer-panel,
   .affiliate-panel {
+    grid-column: 1;
+    grid-row: auto;
     position: static;
   }
 }
@@ -808,18 +726,11 @@ input {
   .viewer-toolbar,
   .section-heading,
   .section-actions,
-  .associate-notice,
-  .status-strip {
+  .side-panel-header,
+  .side-panel-actions,
+  .associate-notice {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .memory-lane {
-    grid-template-columns: 1fr;
-  }
-
-  .memory-lane.with-clear {
-    grid-template-columns: 1fr;
   }
 
   .toolbar-actions {
