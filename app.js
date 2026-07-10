@@ -479,7 +479,6 @@ const renderRecentCards = (items) => {
     button.addEventListener("click", () => {
       queryInput.value = item.pageName || item.title;
       openArticle(item.url);
-      document.querySelector(".viewer-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     recentCards.append(button);
   }
@@ -616,6 +615,12 @@ const renderAffiliateLinks = (title) => {
   }
 };
 
+const scrollToViewer = () => {
+  requestAnimationFrame(() => {
+    document.querySelector(".viewer-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+};
+
 const showArticle = ({ title, url, content, fromSaved = false }) => {
   currentArticle = toItem({ title, url, content });
   articleTitle.textContent = title;
@@ -624,6 +629,7 @@ const showArticle = ({ title, url, content, fromSaved = false }) => {
   article.innerHTML = /<\/?[a-z][\s\S]*>/i.test(content) ? content : renderText(content);
   renderAffiliateLinks(title);
   syncActionButtons();
+  scrollToViewer();
 
   if (!fromSaved) {
     upsertList("history", toItem({ title, url }), 30);
@@ -833,7 +839,6 @@ article.addEventListener("click", (event) => {
   if (!targetUrl) return;
   queryInput.value = pageNameFromWikiUrl(targetUrl) || link.textContent.trim();
   openArticle(targetUrl);
-  document.querySelector("#home")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 favoriteButton.addEventListener("click", toggleFavorite);
