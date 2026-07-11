@@ -4,6 +4,7 @@ import { existsSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { onRequest as handleRecentRequest } from "./functions/api/recent.js";
+import { onRequest as handleLookupRequest } from "./functions/api/lookup.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 const port = Number(process.env.PORT || 4173);
@@ -111,6 +112,13 @@ createServer(async (req, res) => {
     }
     if (requestUrl.pathname === "/api/recent") {
       const response = await handleRecentRequest({
+        request: new Request(requestUrl.toString(), { method: req.method || "GET" })
+      });
+      await sendFetchResponse(res, response);
+      return;
+    }
+    if (requestUrl.pathname === "/api/lookup") {
+      const response = await handleLookupRequest({
         request: new Request(requestUrl.toString(), { method: req.method || "GET" })
       });
       await sendFetchResponse(res, response);

@@ -265,6 +265,8 @@ input {
 }
 
 .search-suggestion {
+  display: grid;
+  gap: 3px;
   min-height: 42px;
   padding: 9px 10px;
   border: 1px solid var(--line);
@@ -273,6 +275,16 @@ input {
   color: var(--text);
   font-weight: 800;
   text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.search-suggestion-kind {
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.search-suggestion strong {
   overflow-wrap: anywhere;
 }
 

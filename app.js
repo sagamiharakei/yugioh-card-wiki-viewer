@@ -1,5 +1,6 @@
 const WIKI_BASE = "https://yugioh-wiki.net/";
 const ARTICLE_API = "./api/article";
+const LOOKUP_API = "./api/lookup";
 const RECENT_API = "./api/recent";
 const READER_BASE = "https://r.jina.ai/http://r.jina.ai/http://";
 const ALL_ORIGINS_BASE = "https://api.allorigins.win/raw?url=";
@@ -73,6 +74,7 @@ let deferredInstallPrompt = null;
 let manualAliasMap = null;
 let fullAliasMap = null;
 let fullAliasMapPromise = null;
+let categoryLookupCache = new Map();
 let recentLoaded = false;
 
 const hasAmazonTag = () =>
@@ -233,6 +235,29 @@ const exactAliasPageName = async (value) => {
   return pageName && aliasKey(pageName) === key ? pageName : "";
 };
 
+const cardCandidateName = (value) => toCardPageName(removeCardBrackets(value));
+
+const categoryExists = async (pageName) => {
+  if (!pageName) return false;
+  if (!categoryLookupCache.has(pageName)) {
+    const url = `${WIKI_BASE}index.php?${encodeYgoPageName(pageName)}`;
+    const endpoint = new URL(LOOKUP_API, location.href);
+    endpoint.searchParams.set("url", url);
+
+    categoryLookupCache.set(
+      pageName,
+      fetch(endpoint, { cache: "no-store" })
+        .then(async (response) => {
+          if (!response.ok) return false;
+          const data = await response.json();
+          return Boolean(data.exists);
+        })
+        .catch(() => false)
+    );
+  }
+  return categoryLookupCache.get(pageName);
+};
+
 const findSearchCandidates = async (value, limit = 12) => {
   const trimmed = value.trim();
   if (!trimmed || /^https?:\/\//i.test(trimmed) || isCardPageName(trimmed)) return [];
@@ -245,9 +270,10 @@ const findSearchCandidates = async (value, limit = 12) => {
 
   const addCandidate = (pageName, score) => {
     if (!pageName) return;
-    const current = candidates.get(pageName);
+    const baseName = removeCardBrackets(pageName);
+    const current = candidates.get(baseName);
     if (!current || score < current.score) {
-      candidates.set(pageName, { pageName, score });
+      candidates.set(baseName, { pageName: baseName, score });
     }
   };
 
@@ -266,13 +292,38 @@ const findSearchCandidates = async (value, limit = 12) => {
     }
   }
 
-  return [...candidates.values()]
+  const cardMatches = [...candidates.values()]
     .sort((a, b) =>
       a.score - b.score ||
       removeCardBrackets(a.pageName).length - removeCardBrackets(b.pageName).length ||
       a.pageName.localeCompare(b.pageName, "ja")
     )
     .slice(0, limit);
+
+  const categoryMatches = await Promise.all(
+    cardMatches.map(async (candidate) => ({
+      ...candidate,
+      exists: await categoryExists(candidate.pageName)
+    }))
+  );
+
+  return cardMatches.flatMap((candidate) => {
+    const category = categoryMatches.find((item) => item.pageName === candidate.pageName);
+    const results = [];
+    if (category?.exists) {
+      results.push({
+        pageName: candidate.pageName,
+        kind: "カテゴリ",
+        score: candidate.score
+      });
+    }
+    results.push({
+      pageName: cardCandidateName(candidate.pageName),
+      kind: "カード",
+      score: candidate.score
+    });
+    return results;
+  });
 };
 
 const normalizeTarget = async (value) => {
@@ -720,7 +771,15 @@ const renderSearchSuggestions = (query, candidates) => {
     const button = document.createElement("button");
     button.className = "search-suggestion";
     button.type = "button";
-    button.textContent = candidate.pageName;
+
+    const kind = document.createElement("span");
+    kind.className = "search-suggestion-kind";
+    kind.textContent = candidate.kind || "ページ";
+
+    const name = document.createElement("strong");
+    name.textContent = candidate.pageName;
+    button.append(kind, name);
+
     button.addEventListener("click", () => {
       clearSearchSuggestions();
       queryInput.value = candidate.pageName;
@@ -762,13 +821,6 @@ const handleSearch = async (value) => {
     return;
   }
 
-  const exactPageName = await exactAliasPageName(raw);
-  if (exactPageName) {
-    clearSearchSuggestions();
-    openArticle(exactPageName);
-    return;
-  }
-
   const candidates = await findSearchCandidates(raw);
   if (candidates.length > 1) {
     renderSearchSuggestions(raw, candidates);
@@ -776,7 +828,8 @@ const handleSearch = async (value) => {
   }
 
   clearSearchSuggestions();
-  openArticle(candidates[0]?.pageName || raw);
+  const exactPageName = await exactAliasPageName(raw);
+  openArticle(candidates[0]?.pageName || exactPageName || raw);
 };
 
 const openArticle = async (value) => {
