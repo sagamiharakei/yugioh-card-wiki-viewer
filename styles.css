@@ -491,6 +491,23 @@ input {
   font-size: 12px;
 }
 
+@media (min-width: 681px) {
+  .item-list {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+
+  .list-item {
+    min-height: 64px;
+    align-content: start;
+    padding: 11px;
+  }
+
+  .list-title {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
 .viewer-panel {
   grid-column: 1;
   min-height: 68vh;
