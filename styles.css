@@ -350,13 +350,11 @@ input {
   min-height: 74px;
 }
 
+.recent-section .section-heading h2,
 .side-panel-header h2 {
   margin-bottom: 0;
-  font-size: 18px;
-}
-
-.recent-section .section-heading h2 {
-  margin-bottom: 0;
+  font-size: 24px;
+  line-height: 1.25;
 }
 
 .side-panel-actions {
