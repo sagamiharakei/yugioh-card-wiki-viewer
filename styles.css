@@ -326,9 +326,17 @@ input {
   color: var(--accent-strong);
 }
 
-.recent-section {
-  width: calc(100% - 236px);
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 16px;
+  align-items: start;
   margin-top: 16px;
+}
+
+.recent-section {
+  width: 100%;
+  margin-top: 0;
   padding: 0;
   overflow: hidden;
 }
@@ -385,7 +393,7 @@ input {
 
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
@@ -550,6 +558,12 @@ input {
   overflow-wrap: anywhere;
   overflow-x: hidden;
   overflow-x: clip;
+}
+
+@media (min-width: 681px) {
+  .article {
+    font-size: 17px;
+  }
 }
 
 .article *,
@@ -752,6 +766,10 @@ input {
 }
 
 @media (max-width: 1040px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
   .recent-section {
     width: 100%;
   }
@@ -818,7 +836,8 @@ input {
   .section-actions .text-button,
   .side-panel-actions .text-button {
     width: 100%;
-    min-height: 42px;
+    min-height: 38px;
+    padding: 8px 10px;
   }
 
   .toolbar-actions {
