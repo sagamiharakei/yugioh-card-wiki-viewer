@@ -746,6 +746,17 @@ input {
     flex-direction: column;
   }
 
+  .section-actions,
+  .side-panel-actions {
+    width: 100%;
+  }
+
+  .section-actions .text-button,
+  .side-panel-actions .text-button {
+    width: 100%;
+    min-height: 42px;
+  }
+
   .toolbar-actions {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
