@@ -133,6 +133,12 @@ p {
   color: #fff;
 }
 
+.search-row .clear-search-button {
+  border: 1px solid var(--line);
+  background: var(--panel-soft);
+  color: var(--accent-strong);
+}
+
 .hero {
   display: grid;
   grid-template-columns: 1fr;
@@ -845,9 +851,16 @@ input {
     flex-direction: column;
   }
 
+  .search-row {
+    flex-direction: row;
+  }
+
   .section-actions,
   .side-panel-actions {
     width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .section-actions .text-button,

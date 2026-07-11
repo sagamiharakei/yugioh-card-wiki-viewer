@@ -39,6 +39,7 @@ const config = {
 
 const form = document.querySelector("#searchForm");
 const queryInput = document.querySelector("#query");
+const clearSearchButton = document.querySelector("#clearSearch");
 const searchSuggestions = document.querySelector("#searchSuggestions");
 const article = document.querySelector("#article");
 const articleTitle = document.querySelector("#articleTitle");
@@ -1000,6 +1001,12 @@ form.addEventListener("submit", (event) => {
 
 queryInput.addEventListener("input", () => {
   if (!queryInput.value.trim()) clearSearchSuggestions();
+});
+
+clearSearchButton?.addEventListener("click", () => {
+  queryInput.value = "";
+  clearSearchSuggestions();
+  queryInput.focus();
 });
 
 article.addEventListener("click", (event) => {
