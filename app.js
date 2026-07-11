@@ -731,12 +731,20 @@ const amazonUrl = (keyword) => {
 };
 
 const affiliateItemsFor = (title = "") => {
-  const base = title && title !== "未選択" ? title.replace(/^遊戯王カードWiki\s*-\s*/, "") : "遊戯王";
+  const base = title && title !== "未選択"
+    ? removeCardBrackets(title.replace(/^遊戯王カードWiki\s*-\s*/, ""))
+    : "遊戯王";
   return [
     {
-      kicker: "カード検索",
-      title: `${base} 関連カード`,
-      text: "カード名に近い商品をAmazonで検索します。",
+      kicker: "Amazonで探す",
+      title: `${base} のカード`,
+      text: `「${base}」に関連する遊戯王カードをAmazonで検索します。`,
+      keyword: `${base} 遊戯王カード`
+    },
+    {
+      kicker: "関連カード",
+      title: `${base} 周辺カード`,
+      text: `「${base}」と一緒に探されやすいカードをAmazonで検索します。`,
       keyword: `${base} 遊戯王`
     },
     {
