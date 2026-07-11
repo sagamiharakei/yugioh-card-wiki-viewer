@@ -229,6 +229,58 @@ input {
   font-size: 16px;
 }
 
+.search-suggestions {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.search-suggestions[hidden] {
+  display: none;
+}
+
+.search-suggestions-heading {
+  display: grid;
+  gap: 3px;
+}
+
+.search-suggestions-heading strong {
+  color: var(--accent-strong);
+}
+
+.search-suggestions-heading span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.search-suggestion-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.search-suggestion {
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+  font-weight: 800;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.search-suggestion:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .associate-notice {
   display: flex;
   align-items: center;

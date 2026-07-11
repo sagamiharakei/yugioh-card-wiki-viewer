@@ -38,6 +38,7 @@ const config = {
 
 const form = document.querySelector("#searchForm");
 const queryInput = document.querySelector("#query");
+const searchSuggestions = document.querySelector("#searchSuggestions");
 const article = document.querySelector("#article");
 const articleTitle = document.querySelector("#articleTitle");
 const statusTitle = document.querySelector("#statusTitle");
@@ -216,6 +217,62 @@ const normalizePageName = async (value) => {
 
   const aliases = await loadFullAliasMap();
   return aliases.get(key) || trimmed;
+};
+
+const exactAliasPageName = async (value) => {
+  const trimmed = value.trim();
+  if (!trimmed || /^https?:\/\//i.test(trimmed)) return "";
+  if (isCardPageName(trimmed)) return trimmed;
+
+  const key = aliasKey(trimmed);
+  const manualAlias = getManualAliasMap().get(key);
+  if (manualAlias) return manualAlias;
+
+  const aliases = await loadFullAliasMap();
+  const pageName = aliases.get(key);
+  return pageName && aliasKey(pageName) === key ? pageName : "";
+};
+
+const findSearchCandidates = async (value, limit = 12) => {
+  const trimmed = value.trim();
+  if (!trimmed || /^https?:\/\//i.test(trimmed) || isCardPageName(trimmed)) return [];
+
+  const queryKey = aliasKey(trimmed);
+  if (queryKey.length < 2) return [];
+
+  const aliases = await loadFullAliasMap();
+  const candidates = new Map();
+
+  const addCandidate = (pageName, score) => {
+    if (!pageName) return;
+    const current = candidates.get(pageName);
+    if (!current || score < current.score) {
+      candidates.set(pageName, { pageName, score });
+    }
+  };
+
+  for (const [key, pageName] of aliases.entries()) {
+    const pageKey = aliasKey(pageName);
+    if (pageKey === queryKey) {
+      addCandidate(pageName, 0);
+    } else if (pageKey.startsWith(queryKey)) {
+      addCandidate(pageName, 10);
+    } else if (pageKey.includes(queryKey)) {
+      addCandidate(pageName, 20);
+    } else if (key === queryKey || key.startsWith(queryKey)) {
+      addCandidate(pageName, 30);
+    } else if (key.includes(queryKey)) {
+      addCandidate(pageName, 40);
+    }
+  }
+
+  return [...candidates.values()]
+    .sort((a, b) =>
+      a.score - b.score ||
+      removeCardBrackets(a.pageName).length - removeCardBrackets(b.pageName).length ||
+      a.pageName.localeCompare(b.pageName, "ja")
+    )
+    .slice(0, limit);
 };
 
 const normalizeTarget = async (value) => {
@@ -630,6 +687,52 @@ const renderAffiliateLinks = (title) => {
   }
 };
 
+const clearSearchSuggestions = () => {
+  if (!searchSuggestions) return;
+  searchSuggestions.hidden = true;
+  searchSuggestions.innerHTML = "";
+};
+
+const renderSearchSuggestions = (query, candidates) => {
+  if (!searchSuggestions) return;
+
+  searchSuggestions.innerHTML = "";
+  if (!candidates.length) {
+    clearSearchSuggestions();
+    return;
+  }
+
+  const heading = document.createElement("div");
+  heading.className = "search-suggestions-heading";
+
+  const title = document.createElement("strong");
+  title.textContent = `候補が複数あります`;
+
+  const note = document.createElement("span");
+  note.textContent = `「${query}」に近い候補から選んでください。`;
+
+  heading.append(title, note);
+
+  const list = document.createElement("div");
+  list.className = "search-suggestion-list";
+
+  for (const candidate of candidates) {
+    const button = document.createElement("button");
+    button.className = "search-suggestion";
+    button.type = "button";
+    button.textContent = candidate.pageName;
+    button.addEventListener("click", () => {
+      clearSearchSuggestions();
+      queryInput.value = candidate.pageName;
+      openArticle(candidate.pageName);
+    });
+    list.append(button);
+  }
+
+  searchSuggestions.append(heading, list);
+  searchSuggestions.hidden = false;
+};
+
 const scrollToViewer = () => {
   requestAnimationFrame(() => {
     document.querySelector(".viewer-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -651,7 +754,33 @@ const showArticle = ({ title, url, content, fromSaved = false }) => {
   }
 };
 
+const handleSearch = async (value) => {
+  const raw = value.trim();
+  if (!raw || /^https?:\/\//i.test(raw) || isCardPageName(raw)) {
+    clearSearchSuggestions();
+    openArticle(value);
+    return;
+  }
+
+  const exactPageName = await exactAliasPageName(raw);
+  if (exactPageName) {
+    clearSearchSuggestions();
+    openArticle(exactPageName);
+    return;
+  }
+
+  const candidates = await findSearchCandidates(raw);
+  if (candidates.length > 1) {
+    renderSearchSuggestions(raw, candidates);
+    return;
+  }
+
+  clearSearchSuggestions();
+  openArticle(candidates[0]?.pageName || raw);
+};
+
 const openArticle = async (value) => {
+  clearSearchSuggestions();
   const target = await normalizeTarget(value);
   const url = target.url;
   const title = titleFromUrl(url, target.pageName);
@@ -813,7 +942,11 @@ document.querySelectorAll(".tab").forEach((button) => {
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  openArticle(queryInput.value);
+  handleSearch(queryInput.value);
+});
+
+queryInput.addEventListener("input", () => {
+  if (!queryInput.value.trim()) clearSearchSuggestions();
 });
 
 article.addEventListener("click", (event) => {
