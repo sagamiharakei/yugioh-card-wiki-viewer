@@ -79,6 +79,16 @@ let fullAliasMapPromise = null;
 let categoryLookupCache = new Map();
 let recentLoaded = false;
 
+const fetchWithTimeout = async (input, init = {}, timeoutMs = 7000) => {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timer);
+  }
+};
+
 const hasAmazonTag = () =>
   Boolean(config.amazonAssociateTag && !config.amazonAssociateTag.includes("YOUR-AMAZON-TAG"));
 
@@ -248,7 +258,7 @@ const categoryExists = async (pageName) => {
 
     categoryLookupCache.set(
       pageName,
-      fetch(endpoint, { cache: "no-store" })
+      fetchWithTimeout(endpoint, { cache: "no-store" }, 2500)
         .then(async (response) => {
           if (!response.ok) return false;
           const data = await response.json();
@@ -338,7 +348,7 @@ const findTextSearchCandidates = async (value, limit = 12) => {
   endpoint.searchParams.set("limit", String(limit));
 
   try {
-    const response = await fetch(endpoint, { cache: "no-store" });
+    const response = await fetchWithTimeout(endpoint, { cache: "no-store" }, 5000);
     if (!response.ok) return [];
     const data = await response.json();
     return (Array.isArray(data.items) ? data.items : [])
