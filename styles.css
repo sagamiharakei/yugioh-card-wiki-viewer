@@ -498,6 +498,17 @@ input {
 }
 
 @media (min-width: 681px) {
+  .search-row {
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+
+  .search-row button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    writing-mode: horizontal-tb;
+  }
+
   .item-list {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
@@ -585,7 +596,7 @@ input {
 
 @media (min-width: 681px) {
   .article {
-    font-size: 17px;
+    font-size: 18px;
   }
 }
 
