@@ -1,6 +1,7 @@
 const WIKI_BASE = "https://yugioh-wiki.net/";
 const ARTICLE_API = "./api/article";
 const LOOKUP_API = "./api/lookup";
+const TEXT_SEARCH_API = "./api/search";
 const RECENT_API = "./api/recent";
 const READER_BASE = "https://r.jina.ai/http://r.jina.ai/http://";
 const ALL_ORIGINS_BASE = "https://api.allorigins.win/raw?url=";
@@ -325,6 +326,44 @@ const findSearchCandidates = async (value, limit = 12) => {
     });
     return results;
   });
+};
+
+const findTextSearchCandidates = async (value, limit = 12) => {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length < 2) return [];
+
+  const wikiSearchUrl = `${WIKI_BASE}index.php?cmd=search&word=${encodeYgoPageName(trimmed)}&type=AND`;
+  const endpoint = new URL(TEXT_SEARCH_API, location.href);
+  endpoint.searchParams.set("url", wikiSearchUrl);
+  endpoint.searchParams.set("limit", String(limit));
+
+  try {
+    const response = await fetch(endpoint, { cache: "no-store" });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return (Array.isArray(data.items) ? data.items : [])
+      .filter((item) => item?.pageName)
+      .map((item) => ({
+        pageName: item.pageName,
+        url: item.url,
+        kind: "本文"
+      }));
+  } catch {
+    return [];
+  }
+};
+
+const mergeSearchCandidates = (titleCandidates, textCandidates) => {
+  const seen = new Set();
+  const merged = [];
+
+  for (const candidate of [...titleCandidates, ...textCandidates]) {
+    const key = removeCardBrackets(candidate.pageName).toLocaleLowerCase("ja");
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(candidate);
+  }
+  return merged;
 };
 
 const normalizeTarget = async (value) => {
@@ -784,7 +823,7 @@ const renderSearchSuggestions = (query, candidates) => {
     button.addEventListener("click", () => {
       clearSearchSuggestions();
       queryInput.value = candidate.pageName;
-      openArticle(candidate.pageName);
+      openArticle(candidate.url || candidate.pageName);
     });
     list.append(button);
   }
@@ -822,15 +861,18 @@ const handleSearch = async (value) => {
     return;
   }
 
-  const candidates = await findSearchCandidates(raw);
+  const exactPageName = await exactAliasPageName(raw);
+  const titleCandidates = await findSearchCandidates(raw);
+  const candidates = exactPageName
+    ? titleCandidates
+    : mergeSearchCandidates(titleCandidates, await findTextSearchCandidates(raw));
   if (candidates.length > 1) {
     renderSearchSuggestions(raw, candidates);
     return;
   }
 
   clearSearchSuggestions();
-  const exactPageName = await exactAliasPageName(raw);
-  openArticle(candidates[0]?.pageName || exactPageName || raw);
+  openArticle(candidates[0]?.url || candidates[0]?.pageName || exactPageName || raw);
 };
 
 const openArticle = async (value) => {
