@@ -1,4 +1,4 @@
-const APP_VERSION = "36";
+const APP_VERSION = "37";
 const CACHE_NAME = `yugioh-card-wiki-viewer-v${APP_VERSION}`;
 const APP_SHELL = [
   "./",
@@ -9,6 +9,7 @@ const APP_SHELL = [
   `./affiliate-config.js?v=${APP_VERSION}`,
   `./vendor/encoding.min.js?v=${APP_VERSION}`,
   "./manifest.webmanifest",
+  `./icons/favicon.svg?v=${APP_VERSION}`,
   "./icons/icon-192.png",
   "./icons/icon-512.png"
 ];
