@@ -569,9 +569,11 @@ const htmlToReadableHtml = (html) => {
 
     const resolvedUrl = resolved.toString();
     if (isWikiUrl(resolvedUrl)) {
-      link.href = resolvedUrl;
-      link.target = "_blank";
-      link.rel = "noopener";
+      link.href = "#home";
+      link.dataset.wikiUrl = resolvedUrl;
+      link.classList.add("wiki-link");
+      link.removeAttribute("target");
+      link.removeAttribute("rel");
       return;
     }
     link.target = "_blank";
@@ -1067,6 +1069,15 @@ clearSearchButton?.addEventListener("click", () => {
   queryInput.focus();
 });
 
+article.addEventListener("click", (event) => {
+  const link = event.target.closest("a[data-wiki-url]");
+  if (!link) return;
+  event.preventDefault();
+  const targetUrl = link.dataset.wikiUrl;
+  if (!targetUrl) return;
+  queryInput.value = pageNameFromWikiUrl(targetUrl) || link.textContent.trim();
+  openArticle(targetUrl);
+});
 
 favoriteButton.addEventListener("click", toggleFavorite);
 bottomFavorite.addEventListener("click", toggleFavorite);
