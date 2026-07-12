@@ -342,18 +342,22 @@ const findSearchCandidates = async (value, limit = 12) => {
 const findTextSearchCandidates = async (value, limit = 12) => {
   const trimmed = value.trim();
   if (!trimmed || trimmed.length < 2) return [];
+  const queryKey = aliasKey(trimmed);
 
   const wikiSearchUrl = `${WIKI_BASE}index.php?cmd=search&word=${encodeYgoPageName(trimmed)}&type=AND`;
   const endpoint = new URL(TEXT_SEARCH_API, location.href);
   endpoint.searchParams.set("url", wikiSearchUrl);
   endpoint.searchParams.set("limit", String(limit));
+  endpoint.searchParams.set("v", "36");
 
   try {
     const response = await fetchWithTimeout(endpoint, { cache: "no-store" }, 5000);
     if (!response.ok) return [];
     const data = await response.json();
     return (Array.isArray(data.items) ? data.items : [])
-      .filter((item) => item?.pageName)
+      .filter((item) =>
+        item?.pageName && (aliasKey(item.pageName) !== "aitsu" || queryKey === "aitsu")
+      )
       .map((item) => ({
         pageName: item.pageName,
         url: item.url,
@@ -595,7 +599,7 @@ const fetchText = async (url) => {
 const fetchViaArticleApi = async (url) => {
   const endpoint = new URL(ARTICLE_API, location.href);
   endpoint.searchParams.set("url", url);
-  endpoint.searchParams.set("v", "35");
+  endpoint.searchParams.set("v", "36");
   const response = await fetch(endpoint, { cache: "no-store" });
   if (!response.ok) throw new Error(`取得APIに接続できません (${response.status})`);
   const data = await response.json();

@@ -12,7 +12,7 @@ const json = (body, status = 200) =>
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": status === 200 ? "public, max-age=300" : "no-store"
+      "Cache-Control": "no-store, no-cache, must-revalidate"
     }
   });
 
@@ -70,7 +70,10 @@ const pageNameFromUrl = (url) => {
 
 const parseSearchResults = (html, limit) => {
   const bodyStart = html.indexOf('<div id="body">');
-  const body = bodyStart >= 0 ? html.slice(bodyStart) : html;
+  const footerStart = html.indexOf('<div id="footer"', Math.max(bodyStart, 0));
+  const body = bodyStart >= 0
+    ? html.slice(bodyStart, footerStart > bodyStart ? footerStart : undefined)
+    : html;
   const items = [];
   const seen = new Set();
   const linkPattern = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
