@@ -71,6 +71,7 @@ const recentCards = document.querySelector("#recentCards");
 const recentRefresh = document.querySelector("#recentRefresh");
 
 let currentArticle = null;
+let articleRequestId = 0;
 let currentList = "history";
 let deferredInstallPrompt = null;
 let manualAliasMap = null;
@@ -594,6 +595,7 @@ const fetchText = async (url) => {
 const fetchViaArticleApi = async (url) => {
   const endpoint = new URL(ARTICLE_API, location.href);
   endpoint.searchParams.set("url", url);
+  endpoint.searchParams.set("v", "35");
   const response = await fetch(endpoint, { cache: "no-store" });
   if (!response.ok) throw new Error(`取得APIに接続できません (${response.status})`);
   const data = await response.json();
@@ -892,8 +894,10 @@ const handleSearch = async (value) => {
 };
 
 const openArticle = async (value) => {
+  const requestId = ++articleRequestId;
   clearSearchSuggestions();
   const target = await normalizeTarget(value);
+  if (requestId !== articleRequestId) return;
   const url = target.url;
   const title = titleFromUrl(url, target.pageName);
   const rawTitle = value.trim();
@@ -918,16 +922,19 @@ const openArticle = async (value) => {
 
   try {
     let content = await fetchArticle(url);
+    if (requestId !== articleRequestId) return;
     let displayTitle = title;
     let displayUrl = url;
 
     if (isMissingPageContent(content) && canRetryAsCardPage(rawTitle, target.pageName)) {
       const cardPageName = toCardPageName(target.pageName || rawTitle);
       const retryTarget = await normalizeTarget(cardPageName);
+      if (requestId !== articleRequestId) return;
 
       if (retryTarget.url !== url) {
         try {
           const retryContent = await fetchArticle(retryTarget.url);
+          if (requestId !== articleRequestId) return;
           if (!isMissingPageContent(retryContent)) {
             content = retryContent;
             displayUrl = retryTarget.url;
@@ -943,6 +950,7 @@ const openArticle = async (value) => {
     showArticle({ title: displayTitle, url: displayUrl, content });
     setStatus("表示しました", "必要なら保存しておくとオフラインでも読めます。");
   } catch (error) {
+    if (requestId !== articleRequestId) return;
     if (saved) {
       showArticle({ ...saved, fromSaved: true });
       setStatus("保存済みを表示", "オンライン取得に失敗したため、保存済みの内容を開きました。");
@@ -988,6 +996,7 @@ const syncListControls = () => {
 
 const openStoredItem = (item, listKey = currentList) => {
   if (item.content) {
+    articleRequestId += 1;
     showArticle({ ...item, fromSaved: listKey === "saved" });
     setStatus(`${currentListLabel(listKey)}を表示`, "端末内のリストから開きました。");
     return;
@@ -1120,8 +1129,22 @@ installButton.addEventListener("click", async () => {
 });
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js");
+  let refreshingForUpdate = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshingForUpdate) return;
+    refreshingForUpdate = true;
+    location.reload();
+  });
+
+  window.addEventListener("load", async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("./sw.js", {
+        updateViaCache: "none"
+      });
+      await registration.update();
+    } catch {
+      // The viewer remains usable even when PWA registration is unavailable.
+    }
   });
 }
 

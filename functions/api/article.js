@@ -12,7 +12,7 @@ const json = (body, status = 200) =>
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": status === 200 ? "public, max-age=300" : "no-store"
+      "Cache-Control": "no-store, no-cache, must-revalidate"
     }
   });
 

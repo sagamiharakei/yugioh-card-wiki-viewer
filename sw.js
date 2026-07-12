@@ -1,12 +1,13 @@
-const CACHE_NAME = "yugioh-card-wiki-viewer-v34";
+const APP_VERSION = "35";
+const CACHE_NAME = `yugioh-card-wiki-viewer-v${APP_VERSION}`;
 const APP_SHELL = [
   "./",
   "./index.html",
   "./policy.html",
-  "./styles.css",
-  "./app.js",
-  "./affiliate-config.js",
-  "./vendor/encoding.min.js",
+  `./styles.css?v=${APP_VERSION}`,
+  `./app.js?v=${APP_VERSION}`,
+  `./affiliate-config.js?v=${APP_VERSION}`,
+  `./vendor/encoding.min.js?v=${APP_VERSION}`,
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
@@ -38,16 +39,22 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
-        const copy = response.clone();
-        if (url.origin === self.location.origin && response.ok) {
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         }
         return response;
-      });
-    })
+      })
+      .catch(async () => {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        if (request.mode === "navigate") return caches.match("./index.html");
+        throw new Error("Offline and not cached");
+      })
   );
 });
