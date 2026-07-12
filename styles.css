@@ -340,6 +340,12 @@ input {
   margin-top: 16px;
 }
 
+.dashboard-main {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
 .recent-section {
   width: 100%;
   margin-top: 0;
@@ -534,19 +540,7 @@ input {
 
 .affiliate-panel {
   grid-column: 2;
-  grid-row: 1 / span 2;
-}
-
-@media (min-width: 1041px) {
-  .recent-section {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .content-grid {
-    grid-column: 1;
-    grid-row: 2;
-  }
+  grid-row: 1;
 }
 
 .viewer-toolbar {
