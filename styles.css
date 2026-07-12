@@ -539,7 +539,7 @@ input {
 
 @media (min-width: 1041px) {
   .dashboard-grid {
-    grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr) 250px;
+    grid-template-columns: 270px minmax(0, 1fr) 250px;
   }
 
   .content-grid {
@@ -547,13 +547,14 @@ input {
   }
 
   .side-panel {
-    grid-column: 2;
-    grid-row: 1;
+    grid-column: 1;
+    grid-row: 2;
   }
 
   .viewer-panel {
-    grid-column: 1 / span 2;
-    grid-row: 2;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    min-height: 0;
   }
 
   .affiliate-panel {
