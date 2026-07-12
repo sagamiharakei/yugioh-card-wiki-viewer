@@ -744,10 +744,12 @@ const amazonUrl = (keyword) => {
   return url.toString();
 };
 
+const affiliateBaseTitle = (title = "") => title && title !== "未選択"
+  ? removeCardBrackets(title.replace(/^遊戯王カードWiki\s*-\s*/, ""))
+  : "遊戯王";
+
 const affiliateItemsFor = (title = "") => {
-  const base = title && title !== "未選択"
-    ? removeCardBrackets(title.replace(/^遊戯王カードWiki\s*-\s*/, ""))
-    : "遊戯王";
+  const base = affiliateBaseTitle(title);
   return [
     {
       kicker: "Amazonで探す",
@@ -798,6 +800,23 @@ const renderAffiliateLinks = (title) => {
     node.querySelector(".affiliate-text").textContent = item.text;
     affiliateLinks.append(node);
   }
+};
+
+const appendArticleAmazonButton = (title) => {
+  const base = affiliateBaseTitle(title);
+  const action = document.createElement("div");
+  action.className = "article-amazon-action";
+
+  const link = document.createElement("a");
+  link.className = "article-amazon-button";
+  link.href = amazonUrl(`${base} 遊戯王カード`);
+  link.target = "_blank";
+  link.rel = "sponsored noopener";
+  link.textContent = "このカードをAmazonで探す";
+  link.setAttribute("aria-label", `${base}をAmazonで探す`);
+
+  action.append(link);
+  article.append(action);
 };
 
 const clearSearchSuggestions = () => {
@@ -866,6 +885,7 @@ const showArticle = ({ title, url, content, fromSaved = false }) => {
   openOriginal.href = url;
   article.classList.remove("empty");
   article.innerHTML = /<\/?[a-z][\s\S]*>/i.test(content) ? content : renderText(content);
+  appendArticleAmazonButton(title);
   renderAffiliateLinks(title);
   syncActionButtons();
   scrollToViewer();
