@@ -133,6 +133,13 @@ p {
   color: #fff;
 }
 
+.search-row button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  word-break: keep-all;
+  writing-mode: horizontal-tb;
+}
+
 .search-row .clear-search-button {
   border: 1px solid var(--line);
   background: var(--panel-soft);
@@ -507,12 +514,6 @@ input {
   .search-row {
     align-items: center;
     flex-wrap: nowrap;
-  }
-
-  .search-row button {
-    flex: 0 0 auto;
-    white-space: nowrap;
-    writing-mode: horizontal-tb;
   }
 
   .item-list {

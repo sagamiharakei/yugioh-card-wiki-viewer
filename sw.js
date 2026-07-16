@@ -1,4 +1,4 @@
-const APP_VERSION = "38";
+const APP_VERSION = "39";
 const CACHE_NAME = `yugioh-card-wiki-viewer-v${APP_VERSION}`;
 const APP_SHELL = [
   "./",
