@@ -924,6 +924,10 @@ input {
     grid-template-columns: repeat(3, 1fr);
   }
 
+  #shareButton {
+    display: none;
+  }
+
   .item-list {
     max-height: 260px;
   }
@@ -939,7 +943,7 @@ input {
     left: 0;
     z-index: 20;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 1px;
     padding: 8px 8px max(8px, env(safe-area-inset-bottom));
     border-top: 1px solid var(--line);
@@ -952,14 +956,31 @@ input {
     display: grid;
     min-height: 42px;
     place-items: center;
+    padding: 0 2px;
     background: var(--panel-soft);
     color: var(--accent-strong);
     text-decoration: none;
     font-size: 13px;
+    white-space: nowrap;
   }
 
   .bottom-nav button:disabled {
     color: var(--muted);
     opacity: .6;
+  }
+}
+
+@media (max-width: 340px) {
+  .bottom-nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .bottom-nav > :last-child {
+    display: none;
+  }
+
+  .bottom-nav a,
+  .bottom-nav button {
+    font-size: 13px;
   }
 }

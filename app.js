@@ -50,8 +50,10 @@ const networkBadge = document.querySelector("#networkBadge");
 const openOriginal = document.querySelector("#openOriginal");
 const saveButton = document.querySelector("#saveButton");
 const favoriteButton = document.querySelector("#favoriteButton");
+const shareButton = document.querySelector("#shareButton");
 const bottomSave = document.querySelector("#bottomSave");
 const bottomFavorite = document.querySelector("#bottomFavorite");
+const bottomShare = document.querySelector("#bottomShare");
 const clearHistory = document.querySelector("#clearHistory");
 const clearSaved = document.querySelector("#clearSaved");
 const installButton = document.querySelector("#installButton");
@@ -79,6 +81,7 @@ let fullAliasMap = null;
 let fullAliasMapPromise = null;
 let categoryLookupCache = new Map();
 let recentLoaded = false;
+let shareFeedbackTimer = null;
 
 const fetchWithTimeout = async (input, init = {}, timeoutMs = 7000) => {
   const controller = new AbortController();
@@ -736,6 +739,11 @@ const syncActionButtons = () => {
     button.classList.toggle("active", saved);
     button.textContent = saved ? "保存済み" : "保存";
   }
+
+  for (const button of [shareButton, bottomShare]) {
+    button.disabled = !hasArticle;
+    button.textContent = "共有";
+  }
 };
 
 const amazonUrl = (keyword) => {
@@ -882,6 +890,14 @@ const scrollToViewer = () => {
 
 const wikiRouteHash = (url) => `#wiki=${encodeURIComponent(url)}`;
 
+const sharedPageFromUrl = () => {
+  try {
+    return new URL(location.href).searchParams.get("page")?.trim() || "";
+  } catch {
+    return "";
+  }
+};
+
 const wikiUrlFromHash = () => {
   if (!location.hash.startsWith("#wiki=")) return "";
   try {
@@ -950,9 +966,22 @@ const handleSearch = async (value) => {
   openArticle(candidates[0]?.url || candidates[0]?.pageName || exactPageName || raw);
 };
 
-const openArticle = async (value, { preserveWikiRoute = false } = {}) => {
-  if (!preserveWikiRoute && location.hash.startsWith("#wiki=")) {
-    history.replaceState(null, "", `${location.pathname}${location.search}`);
+const openArticle = async (value, {
+  preserveWikiRoute = false,
+  preserveSharedPage = false
+} = {}) => {
+  const routeUrl = new URL(location.href);
+  let routeChanged = false;
+  if (!preserveWikiRoute && routeUrl.hash.startsWith("#wiki=")) {
+    routeUrl.hash = "";
+    routeChanged = true;
+  }
+  if (!preserveSharedPage && routeUrl.searchParams.has("page")) {
+    routeUrl.searchParams.delete("page");
+    routeChanged = true;
+  }
+  if (routeChanged) {
+    history.replaceState(null, "", `${routeUrl.pathname}${routeUrl.search}${routeUrl.hash}`);
   }
   const requestId = ++articleRequestId;
   clearSearchSuggestions();
@@ -1042,6 +1071,69 @@ const saveCurrentArticle = () => {
   if (!currentArticle) return;
   upsertList("saved", toItem(currentArticle), 40);
   setStatus("保存しました", "この端末でオフライン表示できるようになりました。");
+};
+
+const setShareFeedback = (label) => {
+  window.clearTimeout(shareFeedbackTimer);
+  for (const button of [shareButton, bottomShare]) button.textContent = label;
+  shareFeedbackTimer = window.setTimeout(() => {
+    for (const button of [shareButton, bottomShare]) button.textContent = "共有";
+  }, 1800);
+};
+
+const copyShareUrl = async (url) => {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(url);
+      return;
+    } catch {
+      // Fall back to the selection-based copy method below.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = url;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.append(textarea);
+  textarea.select();
+  textarea.setSelectionRange(0, textarea.value.length);
+  const copied = document.execCommand("copy");
+  textarea.remove();
+  if (!copied) throw new Error("共有URLをコピーできませんでした");
+};
+
+const shareCurrentArticle = async () => {
+  if (!currentArticle) return;
+
+  const pageName = pageNameFromWikiUrl(currentArticle.url) || currentArticle.title;
+  const shareUrl = new URL(location.href);
+  shareUrl.search = "";
+  shareUrl.hash = "";
+  shareUrl.searchParams.set("page", pageName);
+  const shareData = {
+    title: `${currentArticle.title} | YGOWikiViewer`,
+    text: `遊戯王カードWiki - ${currentArticle.title}`,
+    url: shareUrl.toString()
+  };
+
+  if (typeof navigator.share === "function") {
+    try {
+      await navigator.share(shareData);
+      setShareFeedback("共有済み");
+      return;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+    }
+  }
+
+  try {
+    await copyShareUrl(shareData.url);
+    setShareFeedback("コピー済み");
+  } catch {
+    setShareFeedback("コピー失敗");
+  }
 };
 
 const currentListLabel = (key = currentList) => ({
@@ -1141,6 +1233,8 @@ favoriteButton.addEventListener("click", toggleFavorite);
 bottomFavorite.addEventListener("click", toggleFavorite);
 saveButton.addEventListener("click", saveCurrentArticle);
 bottomSave.addEventListener("click", saveCurrentArticle);
+shareButton.addEventListener("click", shareCurrentArticle);
+bottomShare.addEventListener("click", shareCurrentArticle);
 
 clearSaved.addEventListener("click", () => {
   if (!readList("saved").length) return;
@@ -1217,4 +1311,10 @@ renderAffiliateLinks();
 syncActionButtons();
 setRecentCollapsed(true);
 
-if (wikiUrlFromHash()) openWikiRoute();
+const initialSharedPage = sharedPageFromUrl();
+if (wikiUrlFromHash()) {
+  openWikiRoute();
+} else if (initialSharedPage) {
+  queryInput.value = initialSharedPage;
+  openArticle(initialSharedPage, { preserveSharedPage: true });
+}
