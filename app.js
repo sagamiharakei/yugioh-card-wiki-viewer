@@ -575,8 +575,9 @@ const htmlToReadableHtml = (html) => {
     const resolvedUrl = resolved.toString();
     if (isWikiUrl(resolvedUrl)) {
       link.href = resolvedUrl;
-      link.target = "_blank";
-      link.rel = "noopener";
+      link.classList.add("wiki-link");
+      link.removeAttribute("target");
+      link.removeAttribute("rel");
       return;
     }
     link.target = "_blank";
@@ -879,12 +880,44 @@ const scrollToViewer = () => {
   });
 };
 
+const wikiRouteHash = (url) => `#wiki=${encodeURIComponent(url)}`;
+
+const wikiUrlFromHash = () => {
+  if (!location.hash.startsWith("#wiki=")) return "";
+  try {
+    const url = decodeURIComponent(location.hash.slice(6));
+    return isWikiUrl(url) ? url : "";
+  } catch {
+    return "";
+  }
+};
+
+const openWikiRoute = () => {
+  const url = wikiUrlFromHash();
+  if (!url) return;
+  const pageName = pageNameFromWikiUrl(url);
+  queryInput.value = pageName || url;
+  openArticle(url, { preserveWikiRoute: true });
+};
+
+const prepareArticleWikiLinks = () => {
+  article.querySelectorAll("a[href]").forEach((link) => {
+    if (!isWikiUrl(link.href)) return;
+    const wikiUrl = link.href;
+    link.classList.add("wiki-link");
+    link.href = wikiRouteHash(wikiUrl);
+    link.removeAttribute("target");
+    link.removeAttribute("rel");
+  });
+};
+
 const showArticle = ({ title, url, content, fromSaved = false }) => {
   currentArticle = toItem({ title, url, content });
   articleTitle.textContent = title;
   openOriginal.href = url;
   article.classList.remove("empty");
   article.innerHTML = /<\/?[a-z][\s\S]*>/i.test(content) ? content : renderText(content);
+  prepareArticleWikiLinks();
   appendArticleAmazonButton(title);
   renderAffiliateLinks(title);
   syncActionButtons();
@@ -917,7 +950,10 @@ const handleSearch = async (value) => {
   openArticle(candidates[0]?.url || candidates[0]?.pageName || exactPageName || raw);
 };
 
-const openArticle = async (value) => {
+const openArticle = async (value, { preserveWikiRoute = false } = {}) => {
+  if (!preserveWikiRoute && location.hash.startsWith("#wiki=")) {
+    history.replaceState(null, "", `${location.pathname}${location.search}`);
+  }
   const requestId = ++articleRequestId;
   clearSearchSuggestions();
   const target = await normalizeTarget(value);
@@ -1137,6 +1173,7 @@ recentToggle?.addEventListener("click", () => {
 
 window.addEventListener("online", setNetworkState);
 window.addEventListener("offline", setNetworkState);
+window.addEventListener("hashchange", openWikiRoute);
 
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
@@ -1179,3 +1216,5 @@ setListCollapsed(true);
 renderAffiliateLinks();
 syncActionButtons();
 setRecentCollapsed(true);
+
+if (wikiUrlFromHash()) openWikiRoute();
