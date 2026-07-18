@@ -579,8 +579,8 @@ const htmlToReadableHtml = (html) => {
     if (isWikiUrl(resolvedUrl)) {
       link.href = resolvedUrl;
       link.classList.add("wiki-link");
-      link.removeAttribute("target");
-      link.removeAttribute("rel");
+      link.target = "_blank";
+      link.rel = "noopener";
       return;
     }
     link.target = "_blank";
@@ -774,12 +774,6 @@ const affiliateItemsFor = (title = "") => {
       mobileOnly: true
     },
     {
-      kicker: "関連カード",
-      title: `${base} 周辺カード`,
-      text: `「${base}」と一緒に探されやすいカードをAmazonで検索します。`,
-      keyword: `${base} 遊戯王`
-    },
-    {
       kicker: "保護",
       title: "スリーブ",
       text: "よく使うカードの保護用品を探します。",
@@ -898,6 +892,13 @@ const scrollToViewer = () => {
 
 const wikiRouteHash = (url) => `#wiki=${encodeURIComponent(url)}`;
 
+const wikiViewerUrl = (wikiUrl) => {
+  const viewerUrl = new URL(location.href);
+  viewerUrl.search = "";
+  viewerUrl.hash = wikiRouteHash(wikiUrl);
+  return viewerUrl.toString();
+};
+
 const sharedPageFromUrl = () => {
   try {
     return new URL(location.href).searchParams.get("page")?.trim() || "";
@@ -929,9 +930,9 @@ const prepareArticleWikiLinks = () => {
     if (!isWikiUrl(link.href)) return;
     const wikiUrl = link.href;
     link.classList.add("wiki-link");
-    link.href = wikiRouteHash(wikiUrl);
-    link.removeAttribute("target");
-    link.removeAttribute("rel");
+    link.href = wikiViewerUrl(wikiUrl);
+    link.target = "_blank";
+    link.rel = "noopener";
   });
 };
 
