@@ -767,6 +767,13 @@ const affiliateItemsFor = (title = "") => {
       keyword: `${base} 遊戯王カード`
     },
     {
+      kicker: "Amazonで探す",
+      title: "遊戯王",
+      text: "Amazonで「遊戯王」を検索します。",
+      keyword: "遊戯王",
+      mobileOnly: true
+    },
+    {
       kicker: "関連カード",
       title: `${base} 周辺カード`,
       text: `「${base}」と一緒に探されやすいカードをAmazonで検索します。`,
@@ -803,6 +810,7 @@ const renderAffiliateLinks = (title) => {
   affiliateLinks.innerHTML = "";
   for (const item of affiliateItemsFor(title)) {
     const node = affiliateTemplate.content.firstElementChild.cloneNode(true);
+    node.classList.toggle("mobile-only-affiliate-card", Boolean(item.mobileOnly));
     node.href = amazonUrl(item.keyword);
     node.querySelector(".affiliate-kicker").textContent = item.kicker;
     node.querySelector(".affiliate-title").textContent = item.title;

@@ -782,6 +782,10 @@ input {
   text-decoration: none;
 }
 
+.mobile-only-affiliate-card {
+  display: none;
+}
+
 .affiliate-card:hover {
   border-color: var(--accent);
   background: #fff;
@@ -887,6 +891,14 @@ input {
 
   .article .article-amazon-button {
     width: 100%;
+  }
+
+  .affiliate-links .affiliate-card:not(.mobile-only-affiliate-card) {
+    display: none;
+  }
+
+  .affiliate-links .mobile-only-affiliate-card {
+    display: grid;
   }
 
   .search-row,
