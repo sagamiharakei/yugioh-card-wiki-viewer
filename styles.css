@@ -595,6 +595,7 @@ input {
 
 .article {
   padding: 18px 24px 26px;
+  font-size: 18px;
   line-height: 1.85;
   overflow-wrap: anywhere;
   overflow-x: hidden;
@@ -603,7 +604,7 @@ input {
 
 @media (min-width: 681px) {
   .article {
-    font-size: 18px;
+    font-size: 20px;
   }
 }
 
