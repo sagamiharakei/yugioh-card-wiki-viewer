@@ -3,7 +3,7 @@ const ARTICLE_API = "./api/article";
 const LOOKUP_API = "./api/lookup";
 const TEXT_SEARCH_API = "./api/search";
 const RECENT_API = "./api/recent";
-const READER_BASE = "https://r.jina.ai/http://r.jina.ai/http://";
+const READER_BASE = "https://r.jina.ai/";
 const ALL_ORIGINS_BASE = "https://api.allorigins.win/raw?url=";
 const STORE_KEYS = {
   saved: "ygowiki-viewer:saved",
@@ -448,8 +448,36 @@ const escapeHtml = (value) =>
 const linkify = (value) =>
   value.replace(/https?:\/\/[^\s<]+/g, (url) => `<a href="${url}" target="_blank" rel="noopener">${url}</a>`);
 
+const renderInlineSegment = (value) =>
+  linkify(escapeHtml(value).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>"));
+
+const renderInlineText = (value) => {
+  const html = [];
+  const markdownLinkPattern = /\[([^\]]*)\]\((https?:\/\/[^)\s]+)(?:\s+"[^"]*")?\)/g;
+  let cursor = 0;
+
+  for (const match of value.matchAll(markdownLinkPattern)) {
+    html.push(renderInlineSegment(value.slice(cursor, match.index)));
+    if (match[1]) {
+      html.push(
+        `<a href="${escapeHtml(match[2])}" target="_blank" rel="noopener">${escapeHtml(match[1])}</a>`
+      );
+    }
+    cursor = match.index + match[0].length;
+  }
+
+  html.push(renderInlineSegment(value.slice(cursor)));
+  return html.join("");
+};
+
 const renderText = (text) => {
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const normalizedText = text
+    .replace(/\r\n/g, "\n")
+    .replace(
+      /^Title:[^\n]*\n+(?:URL Source:[^\n]*\n+)?(?:Published Time:[^\n]*\n+)?(?:Markdown Content:\s*\n*)?/i,
+      ""
+    );
+  const lines = normalizedText.split("\n");
   const html = [];
   let inList = false;
 
@@ -468,20 +496,20 @@ const renderText = (text) => {
     }
     if (line.startsWith("# ")) {
       closeList();
-      html.push(`<h1>${escapeHtml(line.slice(2))}</h1>`);
+      html.push(`<h1>${renderInlineText(line.slice(2))}</h1>`);
     } else if (line.startsWith("## ")) {
       closeList();
-      html.push(`<h2>${escapeHtml(line.slice(3))}</h2>`);
+      html.push(`<h2>${renderInlineText(line.slice(3))}</h2>`);
     } else if (line.startsWith("### ")) {
       closeList();
-      html.push(`<h3>${escapeHtml(line.slice(4))}</h3>`);
+      html.push(`<h3>${renderInlineText(line.slice(4))}</h3>`);
     } else if (/^[-*]\s+/.test(line)) {
       if (!inList) html.push("<ul>");
       inList = true;
-      html.push(`<li>${linkify(escapeHtml(line.replace(/^[-*]\s+/, "")))}</li>`);
+      html.push(`<li>${renderInlineText(line.replace(/^[-*]\s+/, ""))}</li>`);
     } else {
       closeList();
-      html.push(`<p>${linkify(escapeHtml(line))}</p>`);
+      html.push(`<p>${renderInlineText(line)}</p>`);
     }
   }
   closeList();
@@ -594,29 +622,41 @@ const htmlToReadableHtml = (html) => {
   return title ? `<h1>${escapeHtml(title.replace(/\s+-遊戯王カードWiki$/, ""))}</h1>${body}` : body;
 };
 
-const fetchText = async (url) => {
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) throw new Error(`取得に失敗しました (${response.status})`);
-  return response.text();
+const fetchText = async (url, timeoutMs = 9000) => {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { cache: "no-store", signal: controller.signal });
+    if (!response.ok) throw new Error(`取得に失敗しました (${response.status})`);
+    return await response.text();
+  } finally {
+    window.clearTimeout(timer);
+  }
 };
 
 const fetchViaArticleApi = async (url) => {
   const endpoint = new URL(ARTICLE_API, location.href);
   endpoint.searchParams.set("url", url);
-  endpoint.searchParams.set("v", "36");
-  const response = await fetch(endpoint, { cache: "no-store" });
-  if (!response.ok) throw new Error(`取得APIに接続できません (${response.status})`);
-  const data = await response.json();
-  if (data.text) return renderText(data.text);
-  if (data.html) return htmlToReadableHtml(data.html);
-  throw new Error("取得APIの応答が空でした");
+  endpoint.searchParams.set("v", "51");
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 7000);
+  try {
+    const response = await fetch(endpoint, { cache: "no-store", signal: controller.signal });
+    if (!response.ok) throw new Error(`取得APIに接続できません (${response.status})`);
+    const data = await response.json();
+    if (data.text) return renderText(data.text);
+    if (data.html) return htmlToReadableHtml(data.html);
+    throw new Error("取得APIの応答が空でした");
+  } finally {
+    window.clearTimeout(timer);
+  }
 };
 
 const fetchArticle = async (url) => {
   const attempts = [
     () => fetchViaArticleApi(url),
-    () => fetchText(`${READER_BASE}${url}`).then(renderText),
-    () => fetchText(`${ALL_ORIGINS_BASE}${encodeURIComponent(url)}`).then(htmlToReadableHtml)
+    () => fetchText(`${READER_BASE}${url}`, 12000).then(renderText),
+    () => fetchText(`${ALL_ORIGINS_BASE}${encodeURIComponent(url)}`, 8000).then(htmlToReadableHtml)
   ];
 
   let lastError = null;
@@ -675,7 +715,7 @@ const loadRecentCards = async () => {
   try {
     const endpoint = new URL(RECENT_API, location.href);
     endpoint.searchParams.set("limit", "10");
-    const response = await fetch(endpoint, { cache: "no-store" });
+    const response = await fetchWithTimeout(endpoint, { cache: "no-store" }, 7000);
     if (!response.ok) throw new Error(`recent ${response.status}`);
     const data = await response.json();
     renderRecentCards(Array.isArray(data.items) ? data.items : []);

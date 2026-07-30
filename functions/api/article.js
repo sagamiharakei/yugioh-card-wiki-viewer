@@ -5,6 +5,18 @@ const corsHeaders = {
 };
 
 const allowedHosts = new Set(["yugioh-wiki.net", "www.yugioh-wiki.net"]);
+const DIRECT_TIMEOUT_MS = 3500;
+const READER_TIMEOUT_MS = 10000;
+
+const withTimeout = async (operation, timeoutMs) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await operation(controller.signal);
+  } finally {
+    clearTimeout(timer);
+  }
+};
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -24,6 +36,30 @@ const decodeBody = (buffer, contentType) => {
   } catch {
     return new TextDecoder("utf-8").decode(buffer);
   }
+};
+
+const readerFallback = async (targetUrl) => {
+  const readerUrl = `https://r.jina.ai/${targetUrl.toString()}`;
+  const result = await withTimeout(async (signal) => {
+    const response = await fetch(readerUrl, {
+      signal,
+      headers: {
+        "Accept": "text/plain,*/*;q=0.8"
+      }
+    });
+    const text = await response.text();
+    return { response, text };
+  }, READER_TIMEOUT_MS);
+
+  if (!result.response.ok) {
+    throw new Error(`reader ${result.response.status}`);
+  }
+
+  return json({
+    url: targetUrl.toString(),
+    contentType: "text/plain; charset=utf-8",
+    text: result.text
+  });
 };
 
 export async function onRequest({ request }) {
@@ -51,18 +87,36 @@ export async function onRequest({ request }) {
     return json({ error: "only ygowiki.net URLs are allowed" }, 400);
   }
 
-  const upstream = await fetch(targetUrl.toString(), {
-    headers: {
-      "Accept": "text/html, text/plain;q=0.9,*/*;q=0.8"
+  let result;
+  try {
+    result = await withTimeout(async (signal) => {
+      const upstream = await fetch(targetUrl.toString(), {
+        signal,
+        headers: {
+          "Accept": "text/html, text/plain;q=0.9,*/*;q=0.8"
+        }
+      });
+      const contentType = upstream.headers.get("content-type") || "text/html; charset=utf-8";
+      const body = await upstream.arrayBuffer();
+      return { upstream, contentType, body };
+    }, DIRECT_TIMEOUT_MS);
+  } catch {
+    try {
+      return await readerFallback(targetUrl);
+    } catch {
+      return json({ error: "upstream and reader fallback unavailable" }, 504);
     }
-  });
+  }
 
-  const contentType = upstream.headers.get("content-type") || "text/html; charset=utf-8";
-  const body = await upstream.arrayBuffer();
+  const { upstream, contentType, body } = result;
   const html = decodeBody(body, contentType);
 
   if (!upstream.ok) {
-    return json({ error: `upstream ${upstream.status}`, html }, upstream.status);
+    try {
+      return await readerFallback(targetUrl);
+    } catch {
+      return json({ error: `upstream ${upstream.status}`, html }, upstream.status);
+    }
   }
 
   return json({
