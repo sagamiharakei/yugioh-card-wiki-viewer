@@ -319,6 +319,17 @@ input {
   line-height: 1.6;
 }
 
+.associate-copy {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+
+.associate-copy small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .setup-pill {
   flex: 0 0 auto;
   padding: 5px 9px;
