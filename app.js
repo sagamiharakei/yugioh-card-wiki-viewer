@@ -511,6 +511,20 @@ const isWikiUrl = (url) => {
   }
 };
 
+const removeEmptyAdPlaceholders = (root) => {
+  root.querySelectorAll("table").forEach((table) => {
+    const firstCell = table.querySelector("tr:first-child > th:first-child, tr:first-child > td:first-child");
+    const tableText = (table.textContent || "").replace(/[\s\u3000]+/g, "");
+    if (firstCell?.textContent?.trim() === "広告" && tableText === "広告") {
+      table.remove();
+    }
+  });
+
+  root.querySelectorAll("p").forEach((paragraph) => {
+    if (paragraph.textContent?.trim() === "広告") paragraph.remove();
+  });
+};
+
 const htmlToReadableHtml = (html) => {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const rawTitle = doc.querySelector("title")?.textContent?.trim() || "";
@@ -545,6 +559,8 @@ const htmlToReadableHtml = (html) => {
     ".jumpmenu",
     "ins.adsbygoogle"
   ].join(",")).forEach((node) => node.remove());
+
+  removeEmptyAdPlaceholders(doc);
 
   const title = doc.querySelector("h1, title")?.textContent?.trim();
   const contentCell = doc.querySelector([
@@ -623,7 +639,7 @@ const fetchText = async (url, timeoutMs = 9000) => {
 const fetchViaArticleApi = async (url) => {
   const endpoint = new URL(ARTICLE_API, location.href);
   endpoint.searchParams.set("url", url);
-  endpoint.searchParams.set("v", "53");
+  endpoint.searchParams.set("v", "54");
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), 7000);
   try {
@@ -884,6 +900,7 @@ const showArticle = ({ title, url, content, fromSaved = false }) => {
   openOriginal.href = url;
   article.classList.remove("empty");
   article.innerHTML = /<\/?[a-z][\s\S]*>/i.test(content) ? content : renderText(content);
+  removeEmptyAdPlaceholders(article);
   prepareArticleWikiLinks();
   syncActionButtons();
   scrollToViewer();
