@@ -1,7 +1,7 @@
 {
-  "name": "遊戯王カードWikiビューア",
+  "name": "遊戯王カードWikiビュアー",
   "short_name": "遊戯王カードWiki",
-  "description": "SafariとChromeに最適化。iPhoneで見やすい遊戯王カードWiki向けWeb/PWAビューア",
+  "description": "SafariとChromeに最適化。iPhoneで見やすい遊戯王カードWiki向けWeb/PWAビュアー",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

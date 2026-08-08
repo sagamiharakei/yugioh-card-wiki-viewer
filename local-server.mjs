@@ -137,5 +137,5 @@ createServer(async (req, res) => {
     sendJson(res, 500, { error: error.message });
   }
 }).listen(port, "127.0.0.1", () => {
-  console.log(`遊戯王カードWikiビューア: http://127.0.0.1:${port}`);
+  console.log(`遊戯王カードWikiビュアー: http://127.0.0.1:${port}`);
 });

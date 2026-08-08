@@ -1078,7 +1078,7 @@ const shareCurrentArticle = async () => {
   shareUrl.hash = "";
   shareUrl.searchParams.set("page", pageName);
   const shareData = {
-    title: `${currentArticle.title} | YGOWikiViewer`,
+    title: `${currentArticle.title} | YGO Viewer`,
     text: `遊戯王カードWiki - ${currentArticle.title}`,
     url: shareUrl.toString()
   };

@@ -1,6 +1,6 @@
-# 遊戯王カードWikiビューア
+# 遊戯王カードWikiビュアー
 
-iPhone Safari / Chrome向けの遊戯王カードWiki用Web/PWAビューアです。検索、お気に入り、履歴、端末保存、共有に対応しています。
+iPhone Safari / Chrome向けの遊戯王カードWiki用Web/PWAビュアーです。検索、お気に入り、履歴、端末保存、共有に対応しています。
 
 ## 公開方法
 
