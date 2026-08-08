@@ -74,7 +74,7 @@ const recentRefresh = document.querySelector("#recentRefresh");
 
 let currentArticle = null;
 let articleRequestId = 0;
-let currentList = "history";
+let currentList = "favorites";
 let deferredInstallPrompt = null;
 let manualAliasMap = null;
 let fullAliasMap = null;
@@ -637,7 +637,7 @@ const fetchText = async (url, timeoutMs = 9000) => {
 const fetchViaArticleApi = async (url) => {
   const endpoint = new URL(ARTICLE_API, location.href);
   endpoint.searchParams.set("url", url);
-  endpoint.searchParams.set("v", "51");
+  endpoint.searchParams.set("v", "52");
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), 7000);
   try {

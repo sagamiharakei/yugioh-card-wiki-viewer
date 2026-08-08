@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0f766e">
-    <meta name="description" content="SafariとChromeに最適化。iPhoneで見やすいウェブアプリとして使える遊戯王カードWiki向けWeb/PWAビューア。検索、履歴、お気に入り、保存済み記事に対応。">
+    <meta name="description" content="SafariとChromeに最適化。iPhoneで見やすいウェブアプリとして使える遊戯王カードWiki向けWeb/PWAビューア。検索、お気に入り、履歴、保存済み記事に対応。">
     <meta name="google-site-verification" content="aUmbZ4Jkl5xHrtXJGGE1JzX2lSttm9huC8S7z3sUMHo">
     <link rel="canonical" href="https://yugioh-card-wiki-viewer.pages.dev/">
     <meta property="og:type" content="website">
@@ -17,9 +17,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>YGOWikiViewer</title>
     <link rel="manifest" href="./manifest.webmanifest">
-    <link rel="icon" href="./icons/favicon.svg?v=51" type="image/svg+xml">
+    <link rel="icon" href="./icons/favicon.svg?v=52" type="image/svg+xml">
     <link rel="apple-touch-icon" href="./icons/icon-192.png">
-    <link rel="stylesheet" href="./styles.css?v=51">
+    <link rel="stylesheet" href="./styles.css?v=52">
   </head>
   <body>
     <div class="app-shell">
@@ -81,10 +81,10 @@
           </section>
 
           <section class="content-grid">
-          <aside id="listSection" class="side-panel is-collapsed" aria-label="履歴とお気に入り">
+          <aside id="listSection" class="side-panel is-collapsed" aria-label="お気に入りと履歴">
             <div class="side-panel-header">
               <div>
-                <h2>履歴・お気に入り・保存</h2>
+                <h2>お気に入り・履歴・保存</h2>
               </div>
               <div class="side-panel-actions">
                 <button id="listToggle" class="text-button" type="button" aria-expanded="false" aria-controls="listContent">表示</button>
@@ -93,8 +93,8 @@
             </div>
             <div id="listContent" class="list-content" hidden>
               <div class="tabs" role="tablist" aria-label="リスト切り替え">
-                <button class="tab active" data-list="history" type="button">履歴</button>
-                <button class="tab" data-list="favorites" type="button">お気に入り</button>
+                <button class="tab active" data-list="favorites" type="button">お気に入り</button>
+                <button class="tab" data-list="history" type="button">履歴</button>
                 <button class="tab" data-list="saved" type="button">保存</button>
               </div>
               <div id="listPanel" class="item-list"></div>
@@ -184,8 +184,8 @@
       </a>
     </template>
 
-    <script src="./vendor/encoding.min.js?v=51"></script>
-    <script src="./affiliate-config.js?v=51"></script>
-    <script src="./app.js?v=51" type="module"></script>
+    <script src="./vendor/encoding.min.js?v=52"></script>
+    <script src="./affiliate-config.js?v=52"></script>
+    <script src="./app.js?v=52" type="module"></script>
   </body>
 </html>
