@@ -31,13 +31,6 @@ const MANUAL_ALIAS_ENTRIES = [
   ["原始生命態ニビル", "《原始生命態ニビル》"]
 ];
 
-const config = {
-  siteName: "遊戯王カードWikiビューア",
-  siteOwnerName: "遊戯王カードWikiビューア",
-  amazonAssociateTag: "YOUR-AMAZON-TAG-22",
-  ...(globalThis.YUGIOH_CARD_WIKI_VIEWER_CONFIG || {})
-};
-
 const form = document.querySelector("#searchForm");
 const queryInput = document.querySelector("#query");
 const clearSearchButton = document.querySelector("#clearSearch");
@@ -62,10 +55,6 @@ const listToggle = document.querySelector("#listToggle");
 const listContent = document.querySelector("#listContent");
 const listPanel = document.querySelector("#listPanel");
 const listTemplate = document.querySelector("#listItemTemplate");
-const affiliateLinks = document.querySelector("#affiliateLinks");
-const affiliateTemplate = document.querySelector("#affiliateLinkTemplate");
-const associateDisclosure = document.querySelector("#associateDisclosure");
-const tagStatus = document.querySelector("#tagStatus");
 const recentSection = document.querySelector("#recent");
 const recentToggle = document.querySelector("#recentToggle");
 const recentContent = document.querySelector("#recentContent");
@@ -92,9 +81,6 @@ const fetchWithTimeout = async (input, init = {}, timeoutMs = 7000) => {
     window.clearTimeout(timer);
   }
 };
-
-const hasAmazonTag = () =>
-  Boolean(config.amazonAssociateTag && !config.amazonAssociateTag.includes("YOUR-AMAZON-TAG"));
 
 const readList = (key) => {
   try {
@@ -637,7 +623,7 @@ const fetchText = async (url, timeoutMs = 9000) => {
 const fetchViaArticleApi = async (url) => {
   const endpoint = new URL(ARTICLE_API, location.href);
   endpoint.searchParams.set("url", url);
-  endpoint.searchParams.set("v", "52");
+  endpoint.searchParams.set("v", "53");
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), 7000);
   try {
@@ -786,90 +772,6 @@ const syncActionButtons = () => {
   }
 };
 
-const amazonUrl = (keyword) => {
-  const url = new URL("https://www.amazon.co.jp/s");
-  url.searchParams.set("k", keyword);
-  if (hasAmazonTag()) url.searchParams.set("tag", config.amazonAssociateTag);
-  return url.toString();
-};
-
-const affiliateBaseTitle = (title = "") => title && title !== "未選択"
-  ? removeCardBrackets(title.replace(/^遊戯王カードWiki\s*-\s*/, ""))
-  : "遊戯王";
-
-const affiliateItemsFor = (title = "") => {
-  const base = affiliateBaseTitle(title);
-  return [
-    {
-      kicker: "Amazonで探す",
-      title: `${base} のカード`,
-      text: `「${base}」に関連する遊戯王カードをAmazonで検索します。`,
-      keyword: `${base} 遊戯王カード`
-    },
-    {
-      kicker: "Amazonで探す",
-      title: "遊戯王",
-      text: "Amazonで「遊戯王」を検索します。",
-      keyword: "遊戯王",
-      mobileOnly: true
-    },
-    {
-      kicker: "保護",
-      title: "スリーブ",
-      text: "よく使うカードの保護用品を探します。",
-      keyword: "遊戯王 スリーブ"
-    },
-    {
-      kicker: "持ち運び",
-      title: "デッキケース",
-      text: "大会・店舗対戦向けのケースを探します。",
-      keyword: "遊戯王 デッキケース"
-    },
-    {
-      kicker: "整理",
-      title: "ストレージ",
-      text: "余ったカードやパーツ整理用の収納を探します。",
-      keyword: "遊戯王 カード ストレージ"
-    },
-    {
-      kicker: "補充",
-      title: "パック・公式サプライ",
-      text: "パックや公式周辺アイテムを探します。",
-      keyword: "遊戯王 オフィシャルカードゲーム"
-    }
-  ];
-};
-
-const renderAffiliateLinks = (title) => {
-  affiliateLinks.innerHTML = "";
-  for (const item of affiliateItemsFor(title)) {
-    const node = affiliateTemplate.content.firstElementChild.cloneNode(true);
-    node.classList.toggle("mobile-only-affiliate-card", Boolean(item.mobileOnly));
-    node.href = amazonUrl(item.keyword);
-    node.querySelector(".affiliate-kicker").textContent = item.kicker;
-    node.querySelector(".affiliate-title").textContent = item.title;
-    node.querySelector(".affiliate-text").textContent = item.text;
-    affiliateLinks.append(node);
-  }
-};
-
-const appendArticleAmazonButton = (title) => {
-  const base = affiliateBaseTitle(title);
-  const action = document.createElement("div");
-  action.className = "article-amazon-action";
-
-  const link = document.createElement("a");
-  link.className = "article-amazon-button";
-  link.href = amazonUrl(`${base} 遊戯王カード`);
-  link.target = "_blank";
-  link.rel = "sponsored noopener";
-  link.textContent = "このカードをAmazonで探す";
-  link.setAttribute("aria-label", `${base}をAmazonで探す`);
-
-  action.append(link);
-  article.append(action);
-};
-
 const clearSearchSuggestions = () => {
   if (!searchSuggestions) return;
   searchSuggestions.hidden = true;
@@ -983,8 +885,6 @@ const showArticle = ({ title, url, content, fromSaved = false }) => {
   article.classList.remove("empty");
   article.innerHTML = /<\/?[a-z][\s\S]*>/i.test(content) ? content : renderText(content);
   prepareArticleWikiLinks();
-  appendArticleAmazonButton(title);
-  renderAffiliateLinks(title);
   syncActionButtons();
   scrollToViewer();
 
@@ -1048,7 +948,6 @@ const openArticle = async (value, {
   article.classList.add("empty");
   article.innerHTML = "<p>読み込み中です...</p>";
   currentArticle = null;
-  renderAffiliateLinks(title);
   syncActionButtons();
   setStatus("読み込み中", "遊戯王カードWikiのページを取得しています。");
 
@@ -1250,12 +1149,6 @@ const setListCollapsed = (collapsed) => {
   listContent.hidden = collapsed;
 };
 
-const setupAffiliateDisclosure = () => {
-  associateDisclosure.textContent = `Amazonのアソシエイトとして、${config.siteOwnerName}は適格販売により収入を得ています。`;
-  tagStatus.textContent = hasAmazonTag() ? "タグ設定済み" : "タグ未設定";
-  tagStatus.classList.toggle("ready", hasAmazonTag());
-};
-
 document.querySelectorAll(".tab").forEach((button) => {
   button.addEventListener("click", () => {
     selectList(button.dataset.list);
@@ -1352,11 +1245,9 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-setupAffiliateDisclosure();
 setNetworkState();
 renderList();
 setListCollapsed(true);
-renderAffiliateLinks();
 syncActionButtons();
 setRecentCollapsed(true);
 

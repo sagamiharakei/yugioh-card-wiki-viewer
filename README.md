@@ -1,20 +1,6 @@
 # 遊戯王カードWikiビューア
 
-iPhone Safari / Chrome向けの遊戯王カードWiki用Web/PWAビューアです。収益化はAdSenseではなく、Amazonアソシエイトの関連アイテムリンクに一本化しています。
-
-## 最初に設定すること
-
-`affiliate-config.js` の `amazonAssociateTag` を、自分のAmazonアソシエイトのトラッキングIDに置き換えてください。
-
-```js
-window.YUGIOH_CARD_WIKI_VIEWER_CONFIG = {
-  siteName: "遊戯王カードWikiビューア",
-  siteOwnerName: "遊戯王カードWikiビューア",
-  amazonAssociateTag: "your-tag-22"
-};
-```
-
-未設定のままでもAmazon検索リンクは動きますが、紹介料は発生しません。
+iPhone Safari / Chrome向けの遊戯王カードWiki用Web/PWAビューアです。検索、お気に入り、履歴、端末保存、共有に対応しています。
 
 ## 公開方法
 
@@ -32,12 +18,6 @@ window.YUGIOH_CARD_WIKI_VIEWER_CONFIG = {
 
 表示された `http://127.0.0.1:4173` をブラウザで開きます。
 
-## Amazonアソシエイト運用メモ
+## 広告運用
 
-- サイト上にアソシエイトであることの表記を置いています。
-- 商品価格、在庫、レビュー、画像はこのサイトでは表示しません。
-- Amazon検索リンクに `tag=` を付ける方式です。
-- 公開時は問い合わせ先と権利対応方針を正式化してください。
-- 運用前に最新のAmazonアソシエイト・プログラム運営規約を確認してください。
-
-参考: https://affiliate.amazon.co.jp/help/operating/agreement
+現在のソースには広告コードを含めていません。広告サービスを導入する場合は、審査と利用規約に合わせて広告コード、プライバシーポリシー、同意管理を設定してください。
